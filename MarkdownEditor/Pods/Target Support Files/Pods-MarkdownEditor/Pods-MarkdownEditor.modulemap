@@ -1,0 +1,6 @@
+framework module Pods_MarkdownEditor {
+  umbrella header "Pods-MarkdownEditor-umbrella.h"
+
+  export *
+  module * { export * }
+}
