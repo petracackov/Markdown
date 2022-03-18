@@ -116,15 +116,15 @@
 		C0AE59E727E4935900B6D414 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				C0AE59E927E4937E00B6D414 /* Main */,
+				C0AE59FA27E4943400B6D414 /* Tools */,
 				C0AE59FF27E4943400B6D414 /* MarkdownHealpers */,
 				C0AE5A0227E4943400B6D414 /* MarkdownItems */,
 				C0AE59FD27E4943400B6D414 /* New GroupTestStuff */,
-				C0AE5A0527E4943400B6D414 /* RichEditorTextView.swift */,
-				C0AE59FA27E4943400B6D414 /* Tools */,
-				C0AE59FC27E4943400B6D414 /* ViewController.swift */,
 				C0AE59F827E4942B00B6D414 /* Main.storyboard */,
+				C0AE59FC27E4943400B6D414 /* ViewController.swift */,
+				C0AE5A0527E4943400B6D414 /* RichEditorTextView.swift */,
 				C0AE5A0E27E4973C00B6D414 /* CustomStyler.swift */,
-				C0AE59E927E4937E00B6D414 /* Main */,
 			);
 			path = Source;
 			sourceTree = "<group>";

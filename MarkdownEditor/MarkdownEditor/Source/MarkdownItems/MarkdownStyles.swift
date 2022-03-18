@@ -23,6 +23,9 @@ class MarkdownStyles {
 
     static let itemParagraphStyler = ListItemParagraphStyler(options: listItemOptions,
                                                              prefixFont: fontCollection.listItemPrefix)
+    static let prefix = NSAttributedString(string: "•")
+
+    static var listParagraphStyle: NSParagraphStyle  { itemParagraphStyler.leadingParagraphStyle(prefixWidth: prefix.size().width) }
 
 
 

@@ -74,21 +74,27 @@ class RichEditorTextView: UIView {
     var boldIsActive: Bool = false {
         didSet {
             guard oldValue != boldIsActive else { return }
+            onBoldSelected()
             delegate?.richEditorTextView(self, didChangeBoldSelection: boldIsActive)
         }
     }
+
     var italicIsActive: Bool = false {
         didSet {
             guard oldValue != italicIsActive else { return }
+            onItalicSelected()
             delegate?.richEditorTextView(self, didChangeItalicSelection: italicIsActive)
         }
     }
+
     var listIsActive: Bool = false {
         didSet {
             guard oldValue != listIsActive else { return }
+            onListSelected()
             delegate?.richEditorTextView(self, didChangeListSelection: listIsActive)
         }
     }
+
     var headingIsActive: Bool = false {
         didSet {
             guard oldValue != headingIsActive else { return }
@@ -116,10 +122,40 @@ class RichEditorTextView: UIView {
         addSubviewWithPinnedEdgesToView(self, subview: vStack)
     }
 
-    private func boldSelected() {
+    private func onBoldSelected() {
         guard currentSelectedRange.length > 0 else { return }
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
         AttributedStringTool.toggleTrait(.traitBold, to: mutableString, in: currentSelectedRange)
+        attributedString = NSAttributedString(attributedString: mutableString)
+    }
+
+    private func onItalicSelected() {
+        guard currentSelectedRange.length > 0 else { return }
+        let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
+        AttributedStringTool.toggleTrait(.traitItalic, to: mutableString, in: currentSelectedRange)
+        attributedString = NSAttributedString(attributedString: mutableString)
+    }
+
+    private func onListSelected() {
+        //guard currentSelectedRange.length > 0 else { return }
+        let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
+
+
+        let selectedParagraphs = paragraphsOfRange(range: currentSelectedRange, str: textView.attributedText)
+        print(selectedParagraphs)
+
+        selectedParagraphs.forEach { paragraphRange in
+            //var paragraphString = NSMutableAttributedString(attributedString: mutableString.attributedSubstring(from: paragraphRange))
+            mutableString.addAttribute(.paragraphStyle, value: MarkdownStyles.listParagraphStyle, range: paragraphRange)
+
+//            AttributedStringTool.forEachAttribute(in: paragraphString) { attribute, range in
+//                paragraphString.addAttribute(.paragraphStyle, value: MarkdownStyles.listParagraphStyle, range: range)
+//            }
+//            mutableString.
+        }
+
+
+
         attributedString = NSAttributedString(attributedString: mutableString)
     }
 }
