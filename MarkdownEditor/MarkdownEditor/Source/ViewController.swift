@@ -112,18 +112,18 @@ class ViewController: UIViewController {
 
 
     @objc private func boldButtonPress() {
-        editingView.boldIsActive.toggle()
+        editingView.selectBold()
     }
 
     @objc private func italicButtonPress() {
-        editingView.italicIsActive.toggle()
+        editingView.selectItalic()
     }
 
     @objc private func headingButtonPress() {
-        editingView.headingIsActive.toggle()
+        editingView.selectHeading()
     }
     @objc private func listButtonPress() {
-        editingView.listIsActive.toggle()
+        //editingView.listIsActive.toggle()
 
     }
 

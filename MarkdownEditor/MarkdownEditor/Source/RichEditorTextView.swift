@@ -54,6 +54,12 @@ class RichEditorTextView: UIView {
         .paragraphStyle : MarkdownStyles.paragraphStyles.body
     ]
 
+    private let headingAttributes: [NSAttributedString.Key: Any] = [
+        .foregroundColor : MarkdownStyles.colorCollection.heading1,
+        .font : MarkdownStyles.fontCollection.heading1,
+        .paragraphStyle : MarkdownStyles.paragraphStyles.heading1
+    ]
+
     // MARK: - TextView selected options
 
     var attributedString: NSAttributedString? {
@@ -71,31 +77,28 @@ class RichEditorTextView: UIView {
         }
     }
 
-    var boldIsActive: Bool = false {
+    private var boldIsActive: Bool = false {
         didSet {
             guard oldValue != boldIsActive else { return }
-            onBoldSelected()
             delegate?.richEditorTextView(self, didChangeBoldSelection: boldIsActive)
         }
     }
 
-    var italicIsActive: Bool = false {
+    private var italicIsActive: Bool = false {
         didSet {
             guard oldValue != italicIsActive else { return }
-            onItalicSelected()
             delegate?.richEditorTextView(self, didChangeItalicSelection: italicIsActive)
         }
     }
 
-    var listIsActive: Bool = false {
+    private var listIsActive: Bool = false {
         didSet {
             guard oldValue != listIsActive else { return }
-            onListSelected()
             delegate?.richEditorTextView(self, didChangeListSelection: listIsActive)
         }
     }
 
-    var headingIsActive: Bool = false {
+    private var headingIsActive: Bool = false {
         didSet {
             guard oldValue != headingIsActive else { return }
             delegate?.richEditorTextView(self, didChangeHeadingSelection: headingIsActive)
@@ -122,27 +125,29 @@ class RichEditorTextView: UIView {
         addSubviewWithPinnedEdgesToView(self, subview: vStack)
     }
 
-    private func onBoldSelected() {
-        guard currentSelectedRange.length > 0 else { return }
+    func selectBold() {
+        guard headingIsActive == false else { return }
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
         AttributedStringTool.toggleTrait(.traitBold, to: mutableString, in: currentSelectedRange)
         attributedString = NSAttributedString(attributedString: mutableString)
+        boldIsActive.toggle()
     }
 
-    private func onItalicSelected() {
-        guard currentSelectedRange.length > 0 else { return }
+    func selectItalic() {
+        guard headingIsActive == false else { return }
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
         AttributedStringTool.toggleTrait(.traitItalic, to: mutableString, in: currentSelectedRange)
         attributedString = NSAttributedString(attributedString: mutableString)
+        italicIsActive.toggle()
     }
 
-    private func onListSelected() {
+    private func selectList() {
         //guard currentSelectedRange.length > 0 else { return }
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
 
 
         let selectedParagraphs = paragraphsOfRange(range: currentSelectedRange, str: textView.attributedText)
-        print(selectedParagraphs)
+        //print(selectedParagraphs)
 
         selectedParagraphs.forEach { paragraphRange in
             //var paragraphString = NSMutableAttributedString(attributedString: mutableString.attributedSubstring(from: paragraphRange))
@@ -156,7 +161,38 @@ class RichEditorTextView: UIView {
 
 
 
-        attributedString = NSAttributedString(attributedString: mutableString)
+        //attributedString = NSAttributedString(attributedString: mutableString)
+    }
+
+    func selectHeading() {
+
+        let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
+        let selectedParagraphs = paragraphsOfRange(range: currentSelectedRange, str: textView.attributedText)
+        print(selectedParagraphs)
+
+        if headingIsActive {
+            selectedParagraphs.forEach { paragraphRange in
+                mutableString.addAttributes(baseAttributes, range: paragraphRange)
+            }
+
+        } else {
+            selectedParagraphs.forEach { paragraphRange in
+                //var paragraphString = NSMutableAttributedString(attributedString: mutableString.attributedSubstring(from: paragraphRange))
+                mutableString.addAttributes(headingAttributes, range: paragraphRange)
+            }
+        }
+
+        headingIsActive.toggle()
+
+        if headingIsActive {
+            listIsActive = false
+            italicIsActive = false
+            boldIsActive = false
+        }
+
+        let currentRange = currentSelectedRange
+        attributedString = mutableString
+        textView.selectedRange = currentRange
     }
 }
 
@@ -186,12 +222,17 @@ private extension RichEditorTextView {
         let mutableText = NSMutableAttributedString(attributedString: attributedString)
         let attributedNewString = NSMutableAttributedString(string: string)
         attributedNewString.setAttributes(baseAttributes)
+
         if boldIsActive {
             AttributedStringTool.addTrait(.traitBold, to: attributedNewString, in: attributedNewString.wholeRange)
         }
 
         if italicIsActive {
             AttributedStringTool.addTrait(.traitItalic, to: attributedNewString, in: attributedNewString.wholeRange)
+        }
+
+        if headingIsActive {
+            attributedNewString.setAttributes(headingAttributes)
         }
 
         mutableText.replaceCharacters(in: range, with: attributedNewString)
@@ -211,14 +252,13 @@ private extension RichEditorTextView {
         textView.selectedRange = currentRange
 
     }
-
 }
 
 private extension RichEditorTextView {
 
     func paragraphsOfRange(range: NSRange, str: NSAttributedString) -> [NSRange] {
         let allParagraphRanges = paragraphRanges(in: textView.attributedText)
-        return allParagraphRanges.filter { $0.location >= range.location && $0.location <= range.location + range.length }
+        return allParagraphRanges.filter { (range.location <= $0.location + $0.length) && (range.location + range.length > $0.location) }
     }
 
     func paragraphRanges(in str: NSAttributedString) -> [NSRange] {
@@ -256,7 +296,7 @@ extension RichEditorTextView: UITextViewDelegate {
 
     func textViewDidChangeSelection(_ textView: UITextView) {
         print("textViewDidChangeSelection")
-        print(textView.selectedRange)
+        //print(textView.selectedRange)
         currentSelectedRange = textView.selectedRange
         updateAttributeState(forRange: textView.selectedRange)
     }
