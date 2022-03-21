@@ -32,6 +32,7 @@ class RichEditorTextView: UIView {
                                        NSAttributedString.Key.foregroundColor: UIColor.red]
         textView.keyboardDismissMode = .interactive
         textView.dataDetectorTypes = [.link]
+        textView.backgroundColor = .white
         return textView
     }()
 
@@ -166,23 +167,12 @@ class RichEditorTextView: UIView {
 
     func selectHeading() {
 
+        headingIsActive.toggle()
+
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
         let selectedParagraphs = paragraphsOfRange(range: currentSelectedRange, str: textView.attributedText)
-        print(selectedParagraphs)
-
-        if headingIsActive {
-            selectedParagraphs.forEach { paragraphRange in
-                mutableString.addAttributes(baseAttributes, range: paragraphRange)
-            }
-
-        } else {
-            selectedParagraphs.forEach { paragraphRange in
-                //var paragraphString = NSMutableAttributedString(attributedString: mutableString.attributedSubstring(from: paragraphRange))
-                mutableString.addAttributes(headingAttributes, range: paragraphRange)
-            }
-        }
-
-        headingIsActive.toggle()
+        let attributes = headingIsActive ? headingAttributes : baseAttributes
+        addAttributesToRanges(in: mutableString, attributes: attributes, ranges: selectedParagraphs)
 
         if headingIsActive {
             listIsActive = false
@@ -207,11 +197,10 @@ private extension RichEditorTextView {
 
         let attributedString = textView.attributedText.attributedSubstring(from: biggerRange)
 
-
-        boldIsActive = AttributedStringTool.allFontsContainTrait(.traitBold, attributedString: attributedString)
-        italicIsActive = AttributedStringTool.allFontsContainTrait(.traitItalic, attributedString: attributedString)
         headingIsActive = MarkdownStyles.isHeading(attributedString)
         listIsActive = MarkdownStyles.isList(attributedString)
+        boldIsActive = AttributedStringTool.allFontsContainTrait(.traitBold, attributedString: attributedString) && !headingIsActive
+        italicIsActive = AttributedStringTool.allFontsContainTrait(.traitItalic, attributedString: attributedString)
 
     }
 
@@ -277,12 +266,18 @@ private extension RichEditorTextView {
         return result.filter { $0.length > 1 }
     }
 
+    func addAttributesToRanges(in string: NSMutableAttributedString, attributes: [NSAttributedString.Key: Any], ranges: [NSRange]) {
+        ranges.forEach { paragraphRange in
+            string.addAttributes(attributes, range: paragraphRange)
+        }
+    }
+
 }
 
 // TODO:
 extension RichEditorTextView: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
-        print("textViewDidChange", textView.attributedText)
+        print("textViewDidChange")
         //self.attributedString = textView.attributedText
     }
 
