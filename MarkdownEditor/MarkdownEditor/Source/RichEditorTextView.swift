@@ -61,6 +61,16 @@ class RichEditorTextView: UIView {
         .paragraphStyle : MarkdownStyles.paragraphStyles.heading1
     ]
 
+    private let listAttributes: [NSAttributedString.Key: Any] = [
+        .paragraphStyle : MarkdownStyles.listParagraphStyle
+    ]
+
+//    private let prefixAttributes:  [NSAttributedString.Key: Any] = [
+//        .foregroundColor : MarkdownStyles.colorCollection.listItemPrefix,
+//        .font : MarkdownStyles.fontCollection.listItemPrefix,
+//        .paragraphStyle : MarkdownStyles.listParagraphStyle
+//    ]
+
     // MARK: - TextView selected options
 
     var attributedString: NSAttributedString? {
@@ -128,41 +138,59 @@ class RichEditorTextView: UIView {
 
     func selectBold() {
         guard headingIsActive == false else { return }
+        boldIsActive.toggle()
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
+        let currentRange = currentSelectedRange
         AttributedStringTool.toggleTrait(.traitBold, to: mutableString, in: currentSelectedRange)
         attributedString = NSAttributedString(attributedString: mutableString)
-        boldIsActive.toggle()
+        textView.selectedRange = currentRange
     }
 
     func selectItalic() {
         guard headingIsActive == false else { return }
+        italicIsActive.toggle()
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
+        let currentRange = currentSelectedRange
         AttributedStringTool.toggleTrait(.traitItalic, to: mutableString, in: currentSelectedRange)
         attributedString = NSAttributedString(attributedString: mutableString)
-        italicIsActive.toggle()
+        textView.selectedRange = currentRange
     }
 
-    private func selectList() {
-        //guard currentSelectedRange.length > 0 else { return }
+    func selectList() {
+        listIsActive.toggle()
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
 
 
         let selectedParagraphs = paragraphsOfRange(range: currentSelectedRange, str: textView.attributedText)
-        //print(selectedParagraphs)
+//        let selectedParagraphStrings = selectedParagraphs.map { (range: $0, string: mutableString.attributedSubstring(from: $0)) }
+
+//        let attributes = listIsActive ? listAttributes : [NSAttributedString.Key.paragraphStyle: MarkdownStyles.listParagraphStyle]
+//        addAttributesToRanges(in: mutableString, attributes: attributes, ranges: selectedParagraphs)
+
+        let paragraphStyle = listIsActive ? MarkdownStyles.listParagraphStyle : MarkdownStyles.paragraphStyles.body
 
         selectedParagraphs.forEach { paragraphRange in
-            //var paragraphString = NSMutableAttributedString(attributedString: mutableString.attributedSubstring(from: paragraphRange))
-            mutableString.addAttribute(.paragraphStyle, value: MarkdownStyles.listParagraphStyle, range: paragraphRange)
+            var paragraphString = NSMutableAttributedString(attributedString: mutableString.attributedSubstring(from: paragraphRange))
+            if listIsActive, !stringHasPrefix(paragraphString) {
+                // add prefix
+                let prefixWithParagraphString = NSMutableAttributedString(attributedString: MarkdownStyles.prefixWithSpace)
+                prefixWithParagraphString.append(paragraphString)
+                paragraphString = prefixWithParagraphString
 
-//            AttributedStringTool.forEachAttribute(in: paragraphString) { attribute, range in
-//                paragraphString.addAttribute(.paragraphStyle, value: MarkdownStyles.listParagraphStyle, range: range)
-//            }
-//            mutableString.
+            } else if !listIsActive, stringHasPrefix(paragraphString) {
+                // remove prefix
+                paragraphString.replaceCharacters(in: NSRange(location: 0, length: MarkdownStyles.prefixWithSpace.length), with: "")
+            }
+
+            paragraphString.addAttribute(for: .paragraphStyle, value: paragraphStyle)
+           // paragraphString.addAttribute(.paragraphStyle, value: paragraphStyle, range: paragraphRange)
+            mutableString.replaceCharacters(in: paragraphRange, with: paragraphString)
+
         }
 
-
-
-        //attributedString = NSAttributedString(attributedString: mutableString)
+        let currentRange = currentSelectedRange
+        attributedString = NSAttributedString(attributedString: mutableString)
+        textView.selectedRange = currentRange
     }
 
     func selectHeading() {
@@ -240,6 +268,11 @@ private extension RichEditorTextView {
         self.attributedString = mutableText
         textView.selectedRange = currentRange
 
+    }
+
+    func stringHasPrefix(_ string: NSAttributedString) -> Bool {
+        let prefixLength = MarkdownStyles.prefixWithSpace.length
+        return string.prefix(length: prefixLength).string == MarkdownStyles.prefixWithSpace.string
     }
 }
 

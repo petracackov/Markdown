@@ -123,7 +123,7 @@ class ViewController: UIViewController {
         editingView.selectHeading()
     }
     @objc private func listButtonPress() {
-        //editingView.listIsActive.toggle()
+        editingView.selectList()
 
     }
 

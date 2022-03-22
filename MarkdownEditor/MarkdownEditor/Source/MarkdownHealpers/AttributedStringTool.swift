@@ -79,16 +79,16 @@ class AttributedStringTool: UIView {
     }
 
     static func allFontsContainTrait(_ trait: UIFontDescriptor.SymbolicTraits, attributedString: NSAttributedString, in range: NSRange? = nil) -> Bool {
-        var hasTraits = false
-        let range = range ?? attributedString.fullRange
-        forEachAttribute(in: attributedString, withKey: .font, in: range) { (font: UIFont, range) in
+        var hasTraits = true
+        var hasFonts = false
+        let fullRange = range ?? attributedString.fullRange
+        forEachAttribute(in: attributedString, withKey: .font, in: fullRange) { (font: UIFont, range) in
+            hasFonts = true
             if !fontHasTrait(trait, font: font) {
                 hasTraits = false
-                return
             }
-            hasTraits = true
         }
-        return hasTraits
+        return hasTraits && hasFonts
     }
 
 

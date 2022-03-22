@@ -41,7 +41,7 @@ class CustomStyler: DownStyler {
                                                 prefixLength: Int,
                                                 in range: NSRange) {
 
-        let attributedPrefix = prefix(in: str, with: prefixLength)
+        let attributedPrefix = str.prefix(length: prefixLength)// prefix(in: str, with: prefixLength)
         let prefixWidth = attributedPrefix.size().width
 
         let defaultStyle = itemParagraphStyler.leadingParagraphStyle(prefixWidth: prefixWidth)
@@ -50,11 +50,11 @@ class CustomStyler: DownStyler {
         }
     }
 
-    private func prefix(in string: NSAttributedString, with length: Int) -> NSAttributedString {
-        guard length <= string.length else { return string }
-        guard length > 0 else { return NSAttributedString() }
-        return string.attributedSubstring(from: NSRange(location: 0, length: length))
-    }
+//    private func prefix(in string: NSAttributedString, with length: Int) -> NSAttributedString {
+//        guard length <= string.length else { return string }
+//        guard length > 0 else { return NSAttributedString() }
+//        return string.attributedSubstring(from: NSRange(location: 0, length: length))
+//    }
 
 //    override func style(item str: NSMutableAttributedString, prefixLength: Int) {
 //

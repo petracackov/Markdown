@@ -23,9 +23,27 @@ class MarkdownStyles {
 
     static let itemParagraphStyler = ListItemParagraphStyler(options: listItemOptions,
                                                              prefixFont: fontCollection.listItemPrefix)
-    static let prefix = NSAttributedString(string: "•")
 
-    static var listParagraphStyle: NSParagraphStyle  { itemParagraphStyler.leadingParagraphStyle(prefixWidth: prefix.size().width) }
+    static let prefixAttributes: [NSAttributedString.Key: Any] = [
+        .foregroundColor : MarkdownStyles.colorCollection.listItemPrefix,
+        .font : MarkdownStyles.fontCollection.listItemPrefix
+    ]
+
+
+    static let prefix = "•"
+    static var attributedPrefix: NSAttributedString {
+        let mutablePrefix = NSMutableAttributedString(string: prefix)
+        mutablePrefix.addAttributes(prefixAttributes)
+        return mutablePrefix
+    }
+
+    static var prefixWithSpace: NSAttributedString {
+        let mutablePrefix = NSMutableAttributedString(string: prefix + "\t")
+        mutablePrefix.addAttributes(prefixAttributes)
+        return mutablePrefix
+    }
+
+    static var listParagraphStyle: NSParagraphStyle  { itemParagraphStyler.leadingParagraphStyle(prefixWidth: attributedPrefix.size().width) }
 
 
 
