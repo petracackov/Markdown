@@ -136,61 +136,61 @@ class RichEditorTextView: UIView {
         addSubviewWithPinnedEdgesToView(self, subview: vStack)
     }
 
+
+}
+
+// MARK: - Selection functions
+
+extension RichEditorTextView {
+
     func selectBold() {
         guard headingIsActive == false else { return }
         boldIsActive.toggle()
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
-        let currentRange = currentSelectedRange
         AttributedStringTool.toggleTrait(.traitBold, to: mutableString, in: currentSelectedRange)
-        attributedString = NSAttributedString(attributedString: mutableString)
-        textView.selectedRange = currentRange
+        updateTextField(with: mutableString)
     }
 
     func selectItalic() {
         guard headingIsActive == false else { return }
         italicIsActive.toggle()
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
-        let currentRange = currentSelectedRange
         AttributedStringTool.toggleTrait(.traitItalic, to: mutableString, in: currentSelectedRange)
-        attributedString = NSAttributedString(attributedString: mutableString)
-        textView.selectedRange = currentRange
+        updateTextField(with: mutableString)
     }
 
     func selectList() {
         listIsActive.toggle()
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
 
-
-        let selectedParagraphs = paragraphsOfRange(range: currentSelectedRange, str: textView.attributedText)
-//        let selectedParagraphStrings = selectedParagraphs.map { (range: $0, string: mutableString.attributedSubstring(from: $0)) }
-
-//        let attributes = listIsActive ? listAttributes : [NSAttributedString.Key.paragraphStyle: MarkdownStyles.listParagraphStyle]
-//        addAttributesToRanges(in: mutableString, attributes: attributes, ranges: selectedParagraphs)
+        // To prevent wrong strings in specific range, ranges must be sorted from the greatest to the smallest. The string will be modified in for loop from the bigger range location to the smallest. That is because that the changes on the specific range do not change the string in the smaller range
+        let selectedParagraphs = paragraphsOfRange(range: currentSelectedRange, str: textView.attributedText).sorted { $0.location > $1.location }
 
         let paragraphStyle = listIsActive ? MarkdownStyles.listParagraphStyle : MarkdownStyles.paragraphStyles.body
 
         selectedParagraphs.forEach { paragraphRange in
+
             var paragraphString = NSMutableAttributedString(attributedString: mutableString.attributedSubstring(from: paragraphRange))
+
             if listIsActive, !stringHasPrefix(paragraphString) {
-                // add prefix
+                // append prefix to the current paragraph string if it does not yet exist
                 let prefixWithParagraphString = NSMutableAttributedString(attributedString: MarkdownStyles.prefixWithSpace)
                 prefixWithParagraphString.append(paragraphString)
                 paragraphString = prefixWithParagraphString
 
             } else if !listIsActive, stringHasPrefix(paragraphString) {
-                // remove prefix
+                // remove prefix from the current paragraph if it exists
                 paragraphString.replaceCharacters(in: NSRange(location: 0, length: MarkdownStyles.prefixWithSpace.length), with: "")
             }
 
+            // add correct paragraph style -> indent to the new string
             paragraphString.addAttribute(for: .paragraphStyle, value: paragraphStyle)
-           // paragraphString.addAttribute(.paragraphStyle, value: paragraphStyle, range: paragraphRange)
-            mutableString.replaceCharacters(in: paragraphRange, with: paragraphString)
 
+            // replace the old string with the new one -> should not mess with other paragraphStrings ranges since ranges are adjusted from bigger to smaller
+            mutableString.replaceCharacters(in: paragraphRange, with: paragraphString)
         }
 
-        let currentRange = currentSelectedRange
-        attributedString = NSAttributedString(attributedString: mutableString)
-        textView.selectedRange = currentRange
+        updateTextField(with: mutableString)
     }
 
     func selectHeading() {
@@ -208,15 +208,13 @@ class RichEditorTextView: UIView {
             boldIsActive = false
         }
 
-        let currentRange = currentSelectedRange
-        attributedString = mutableString
-        textView.selectedRange = currentRange
+        updateTextField(with: mutableString)
     }
 }
 
 private extension RichEditorTextView {
 
-    private func updateAttributeState(forRange range: NSRange) {
+    private func updateSelectedState(forRange range: NSRange) {
         var biggerRange = range
         if range.length == 0 && range.location > 0 {
             biggerRange.length += 1
@@ -231,8 +229,6 @@ private extension RichEditorTextView {
         italicIsActive = AttributedStringTool.allFontsContainTrait(.traitItalic, attributedString: attributedString)
 
     }
-
-
 
     private func updateString(with string: String, at range: NSRange) {
         guard let attributedString = attributedString else { return }
@@ -270,9 +266,10 @@ private extension RichEditorTextView {
 
     }
 
-    func stringHasPrefix(_ string: NSAttributedString) -> Bool {
-        let prefixLength = MarkdownStyles.prefixWithSpace.length
-        return string.prefix(length: prefixLength).string == MarkdownStyles.prefixWithSpace.string
+    private func updateTextField(with string: NSAttributedString) {
+        let currentRange = currentSelectedRange
+        attributedString = string
+        textView.selectedRange = currentRange
     }
 }
 
@@ -305,6 +302,17 @@ private extension RichEditorTextView {
         }
     }
 
+    func stringHasPrefix(_ string: NSAttributedString) -> Bool {
+        let prefixLength = MarkdownStyles.prefixWithSpace.length
+        return string.prefix(length: prefixLength).string == MarkdownStyles.prefixWithSpace.string
+    }
+
+    func isBeginningOfParagraph(range: NSRange) -> Bool {
+        guard range.length == 0 else { return false }
+        let allParagraphRangesLocations = paragraphRanges(in: textView.attributedText)
+        return allParagraphRangesLocations.contains(where: { ($0.location == range.location) || ($0.length + $0.location == range.location) })
+    }
+
 }
 
 // TODO:
@@ -326,7 +334,7 @@ extension RichEditorTextView: UITextViewDelegate {
         print("textViewDidChangeSelection")
         //print(textView.selectedRange)
         currentSelectedRange = textView.selectedRange
-        updateAttributeState(forRange: textView.selectedRange)
+        updateSelectedState(forRange: textView.selectedRange)
     }
 
 //    func textViewShouldEndEditing(_ textView: UITextView) -> Bool {
@@ -374,6 +382,7 @@ class MyTextView: UITextView {
 //        return superRect
 //    }
 }
+
 
 
 // MARK: - Helpers
