@@ -103,9 +103,9 @@ class ViewController: UIViewController {
     private func setupEditor() {
         let down = Down(markdownString: markdown)
         let customStyler = CustomStyler(configuration: MarkdownStyles.downConfiguration)
-        let downString = try? down.toAttributedString([.hardBreaks], styler: customStyler)
+        let downString = (try? down.toAttributedString([.hardBreaks], styler: customStyler)) ?? NSAttributedString(string: "")
         editingView.delegate = self
-        editingView.attributedString = downString
+        editingView.updateTextField(with: downString)
     }
 
     // MARK: - Button actions
@@ -142,6 +142,14 @@ class ViewController: UIViewController {
 // MARK: - RichEditorTextViewDelegate
 
 extension ViewController: RichEditorTextViewDelegate {
+    func richEditorTextViewDidPasteText(_ sender: RichEditorTextView) {
+        // nothing to do
+    }
+
+    func richEditorTextViewDidChangeText(_ sender: RichEditorTextView) {
+        // nothing to do
+    }
+
     func richEditorTextView(_ sender: RichEditorTextView, didChangeBoldSelection isSelected: Bool) {
         boldButton.backgroundColor = isSelected ? .gray : .white
     }

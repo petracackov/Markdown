@@ -9,6 +9,26 @@ import UIKit
 
 class AttributedStringTool: UIView {
 
+    static private let linkDetector: NSDataDetector? = {
+        let types: NSTextCheckingResult.CheckingType = [.link]
+        return try? NSDataDetector(types: types.rawValue)
+    }()
+
+    static func detectedURLRanges(in string: NSAttributedString) -> [NSRange] {
+        guard let detector = linkDetector else { return [] }
+
+        var detectedRanges: [NSRange] = []
+        detector.enumerateMatches(in: string.string, options: [], range: string.fullRange, using: { match, _, _ in
+            guard let match = match, match.resultType == .link, match.url != nil else {
+                return
+            }
+
+            detectedRanges.append(match.range)
+        })
+
+        return detectedRanges
+    }
+
     static func addTrait(_ trait: UIFontDescriptor.SymbolicTraits, to attributedString: NSMutableAttributedString, in range: NSRange) {
         forEachAttribute(in: attributedString, withKey: .font, in: range) { (font: UIFont, range) in
             let newFont = fontByAddingTrait(trait, to: font)

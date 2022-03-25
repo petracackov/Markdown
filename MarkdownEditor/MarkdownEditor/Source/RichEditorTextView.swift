@@ -12,6 +12,8 @@ protocol RichEditorTextViewDelegate: AnyObject {
     func richEditorTextView(_ sender: RichEditorTextView, didChangeItalicSelection isSelected: Bool)
     func richEditorTextView(_ sender: RichEditorTextView, didChangeListSelection isSelected: Bool)
     func richEditorTextView(_ sender: RichEditorTextView, didChangeHeadingSelection isSelected: Bool)
+    func richEditorTextViewDidPasteText(_ sender: RichEditorTextView)
+    func richEditorTextViewDidChangeText(_ sender: RichEditorTextView)
 }
 
 class RichEditorTextView: UIView {
@@ -33,6 +35,10 @@ class RichEditorTextView: UIView {
         textView.keyboardDismissMode = .interactive
         textView.dataDetectorTypes = [.link]
         textView.backgroundColor = .white
+        textView.onPasteAction = { [weak self] in
+            guard let self = self else { return }
+            self.delegate?.richEditorTextViewDidPasteText(self)
+        }
         return textView
     }()
 
@@ -71,13 +77,17 @@ class RichEditorTextView: UIView {
 //        .paragraphStyle : MarkdownStyles.listParagraphStyle
 //    ]
 
-    // MARK: - TextView selected options
 
-    var attributedString: NSAttributedString? {
+    public private(set) var attributedString: NSAttributedString? {
         didSet {
+            // check tor same value is there to prevent creating a cycle -> DO NOT TOUCH IT
+            guard attributedString != oldValue else { return }
             textView.attributedText = attributedString
+            delegate?.richEditorTextViewDidChangeText(self)
         }
     }
+
+    // MARK: - TextView selected options
 
     lazy var currentSelectedRange: NSRange = NSRange(location: attributedString?.length ?? 0, length: 0) {
         didSet {
@@ -90,6 +100,7 @@ class RichEditorTextView: UIView {
 
     private var boldIsActive: Bool = false {
         didSet {
+            // check tor same value is there to prevent creating a cycle -> DO NOT TOUCH IT
             guard oldValue != boldIsActive else { return }
             delegate?.richEditorTextView(self, didChangeBoldSelection: boldIsActive)
         }
@@ -97,6 +108,7 @@ class RichEditorTextView: UIView {
 
     private var italicIsActive: Bool = false {
         didSet {
+            // check tor same value is there to prevent creating a cycle -> DO NOT TOUCH IT
             guard oldValue != italicIsActive else { return }
             delegate?.richEditorTextView(self, didChangeItalicSelection: italicIsActive)
         }
@@ -104,6 +116,7 @@ class RichEditorTextView: UIView {
 
     private var listIsActive: Bool = false {
         didSet {
+            // check tor same value is there to prevent creating a cycle -> DO NOT TOUCH IT
             guard oldValue != listIsActive else { return }
             delegate?.richEditorTextView(self, didChangeListSelection: listIsActive)
         }
@@ -111,6 +124,7 @@ class RichEditorTextView: UIView {
 
     private var headingIsActive: Bool = false {
         didSet {
+            // check tor same value is there to prevent creating a cycle -> DO NOT TOUCH IT
             guard oldValue != headingIsActive else { return }
             delegate?.richEditorTextView(self, didChangeHeadingSelection: headingIsActive)
         }
@@ -136,6 +150,11 @@ class RichEditorTextView: UIView {
         addSubviewWithPinnedEdgesToView(self, subview: vStack)
     }
 
+    func updateTextField(with string: NSAttributedString) {
+        let currentRange = currentSelectedRange
+        attributedString = string
+        textView.selectedRange = currentRange
+    }
 
 }
 
@@ -164,7 +183,7 @@ extension RichEditorTextView {
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
 
         // To prevent wrong strings in specific range, ranges must be sorted from the greatest to the smallest. The string will be modified in for loop from the bigger range location to the smallest. That is because that the changes on the specific range do not change the string in the smaller range
-        let selectedParagraphs = paragraphsOfRange(range: currentSelectedRange, str: textView.attributedText).sorted { $0.location > $1.location }
+        let selectedParagraphs = textView.attributedText.paragraphsOfRange(range: currentSelectedRange).sorted { $0.location > $1.location }
 
         let paragraphStyle = listIsActive ? MarkdownStyles.listParagraphStyle : MarkdownStyles.paragraphStyles.body
 
@@ -198,9 +217,9 @@ extension RichEditorTextView {
         headingIsActive.toggle()
 
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
-        let selectedParagraphs = paragraphsOfRange(range: currentSelectedRange, str: textView.attributedText)
+        let selectedParagraphs = textView.attributedText.paragraphsOfRange(range: currentSelectedRange)
         let attributes = headingIsActive ? headingAttributes : baseAttributes
-        addAttributesToRanges(in: mutableString, attributes: attributes, ranges: selectedParagraphs)
+        mutableString.addAttributesToRanges(attributes: attributes, ranges: selectedParagraphs)
 
         if headingIsActive {
             listIsActive = false
@@ -237,11 +256,11 @@ private extension RichEditorTextView {
         attributedNewString.setAttributes(baseAttributes)
 
         if boldIsActive {
-            AttributedStringTool.addTrait(.traitBold, to: attributedNewString, in: attributedNewString.wholeRange)
+            AttributedStringTool.addTrait(.traitBold, to: attributedNewString, in: attributedNewString.fullRange)
         }
 
         if italicIsActive {
-            AttributedStringTool.addTrait(.traitItalic, to: attributedNewString, in: attributedNewString.wholeRange)
+            AttributedStringTool.addTrait(.traitItalic, to: attributedNewString, in: attributedNewString.fullRange)
         }
 
         if headingIsActive {
@@ -261,46 +280,26 @@ private extension RichEditorTextView {
         // if text was previously selected (the length of range was not 0) after replacing characters it should not be selected anymore
         currentRange.length = 0
 
-        self.attributedString = mutableText
+        self.attributedString = updateStringWithLinkAttributes(mutableText)
         textView.selectedRange = currentRange
 
     }
 
-    private func updateTextField(with string: NSAttributedString) {
-        let currentRange = currentSelectedRange
-        attributedString = string
-        textView.selectedRange = currentRange
+    private func updateStringWithLinkAttributes(_ string: NSAttributedString) -> NSAttributedString {
+
+        let mutableText = NSMutableAttributedString(attributedString: string)
+        mutableText.addAttribute(for: .foregroundColor, value: MarkdownStyles.colorCollection.body)
+
+        let linkRanges = AttributedStringTool.detectedURLRanges(in: string)
+        linkRanges.forEach { mutableText.addAttribute(.foregroundColor, value: MarkdownStyles.colorCollection.link, range: $0) }
+
+        return mutableText
     }
 }
 
 private extension RichEditorTextView {
 
-    func paragraphsOfRange(range: NSRange, str: NSAttributedString) -> [NSRange] {
-        let allParagraphRanges = paragraphRanges(in: textView.attributedText)
-        return allParagraphRanges.filter { (range.location <= $0.location + $0.length) && (range.location + range.length > $0.location) }
-    }
 
-    func paragraphRanges(in str: NSAttributedString) -> [NSRange] {
-        guard str.length > 0 else { return [] }
-
-        func nextParagraphRange(at location: Int) -> NSRange {
-            return NSString(string: str.string).paragraphRange(for: NSRange(location: location, length: 1))
-        }
-
-        var result = [nextParagraphRange(at: 0)]
-
-        while let currentLocation = result.last?.upperBound, currentLocation < str.length {
-            result.append(nextParagraphRange(at: currentLocation))
-        }
-
-        return result.filter { $0.length > 1 }
-    }
-
-    func addAttributesToRanges(in string: NSMutableAttributedString, attributes: [NSAttributedString.Key: Any], ranges: [NSRange]) {
-        ranges.forEach { paragraphRange in
-            string.addAttributes(attributes, range: paragraphRange)
-        }
-    }
 
     func stringHasPrefix(_ string: NSAttributedString) -> Bool {
         let prefixLength = MarkdownStyles.prefixWithSpace.length
@@ -309,18 +308,15 @@ private extension RichEditorTextView {
 
     func isBeginningOfParagraph(range: NSRange) -> Bool {
         guard range.length == 0 else { return false }
-        let allParagraphRangesLocations = paragraphRanges(in: textView.attributedText)
+        let allParagraphRangesLocations = textView.attributedText.paragraphRanges()
         return allParagraphRangesLocations.contains(where: { ($0.location == range.location) || ($0.length + $0.location == range.location) })
     }
 
 }
 
-// TODO:
+
+
 extension RichEditorTextView: UITextViewDelegate {
-    func textViewDidChange(_ textView: UITextView) {
-        print("textViewDidChange")
-        //self.attributedString = textView.attributedText
-    }
 
     func textViewDidEndEditing(_ textView: UITextView) {
         print("textViewDidEndEditing")
@@ -330,11 +326,18 @@ extension RichEditorTextView: UITextViewDelegate {
         print("textViewDidBeginEditing")
     }
 
-    func textViewDidChangeSelection(_ textView: UITextView) {
-        print("textViewDidChangeSelection")
-        //print(textView.selectedRange)
+    public func textViewDidChange(_ textView: UITextView) {
+        // Will never be called because shouldChangeTextIn returns false and handles text changes manually
+    }
+
+    public func textViewDidChangeSelection(_ textView: UITextView) {
         currentSelectedRange = textView.selectedRange
         updateSelectedState(forRange: textView.selectedRange)
+    }
+
+    public func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        updateString(with: text, at: range)
+        return false
     }
 
 //    func textViewShouldEndEditing(_ textView: UITextView) -> Bool {
@@ -345,17 +348,6 @@ extension RichEditorTextView: UITextViewDelegate {
 //        print("textViewShouldBeginEditing")
 //    }
 //
-    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        print("shouldChangeTextIn", text)
-        // text empty indicates that deletion is happening. Text is only manually set when it is added not when deleted
-//        if text.isEmpty {
-//            return true
-//        } else {
-            updateString(with: text, at: range)
-            return false
-        //}
-
-    }
 //
 //    func textView(_ textView: UITextView, shouldInteractWith URL: URL, in characterRange: NSRange, interaction: UITextItemInteraction) -> Bool {
 //        print("shouldInteractWithURL")
@@ -381,6 +373,14 @@ class MyTextView: UITextView {
 //        print(superRect.size.height, font)
 //        return superRect
 //    }
+
+    var onPasteAction: (() -> Void)?
+
+    override func paste(_ sender: Any?) {
+        super.paste(sender)
+
+        onPasteAction?()
+    }
 }
 
 
