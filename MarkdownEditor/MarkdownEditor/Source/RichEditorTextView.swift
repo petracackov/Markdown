@@ -150,10 +150,10 @@ class RichEditorTextView: UIView {
         addSubviewWithPinnedEdgesToView(self, subview: vStack)
     }
 
-    func updateTextField(with string: NSAttributedString) {
+    func updateTextField(with string: NSAttributedString, newRange: NSRange? = nil) {
         let currentRange = currentSelectedRange
         attributedString = string
-        textView.selectedRange = currentRange
+        textView.selectedRange = newRange ?? currentRange
     }
 
 }
@@ -187,6 +187,8 @@ extension RichEditorTextView {
 
         let paragraphStyle = listIsActive ? MarkdownStyles.listParagraphStyle : MarkdownStyles.paragraphStyles.body
 
+        var updatedRange = currentSelectedRange
+
         selectedParagraphs.forEach { paragraphRange in
 
             var paragraphString = NSMutableAttributedString(attributedString: mutableString.attributedSubstring(from: paragraphRange))
@@ -196,10 +198,20 @@ extension RichEditorTextView {
                 let prefixWithParagraphString = NSMutableAttributedString(attributedString: MarkdownStyles.prefixWithSpace)
                 prefixWithParagraphString.append(paragraphString)
                 paragraphString = prefixWithParagraphString
+                if paragraphRange.location < updatedRange.location {
+                    updatedRange.location += 2
+                } else if updatedRange.length > 0 {
+                    updatedRange.length += 2
+                }
 
             } else if !listIsActive, stringHasPrefix(paragraphString) {
                 // remove prefix from the current paragraph if it exists
                 paragraphString.replaceCharacters(in: NSRange(location: 0, length: MarkdownStyles.prefixWithSpace.length), with: "")
+                if paragraphRange.location < updatedRange.location {
+                    updatedRange.location -= 2
+                } else if updatedRange.length > 0 {
+                    updatedRange.length -= 2
+                }
             }
 
             // add correct paragraph style -> indent to the new string
@@ -209,7 +221,7 @@ extension RichEditorTextView {
             mutableString.replaceCharacters(in: paragraphRange, with: paragraphString)
         }
 
-        updateTextField(with: mutableString)
+        updateTextField(with: mutableString, newRange: updatedRange)
     }
 
     func selectHeading() {
