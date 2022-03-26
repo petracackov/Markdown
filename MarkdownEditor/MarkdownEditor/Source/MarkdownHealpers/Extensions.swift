@@ -36,81 +36,6 @@ private extension NSParagraphStyle {
 
 }
 
-extension NSMutableAttributedString {
-
-    func setAttributes(_ attrs: [Key: Any]) {
-        setAttributes(attrs, range: fullRange)
-    }
-
-    func addAttribute(for key: Key, value: Any) {
-        addAttribute(key, value: value, range: fullRange)
-    }
-
-    func addAttributes(_ attrs: [Key: Any]) {
-        addAttributes(attrs, range: fullRange)
-    }
-
-    func updateExistingAttributes<A>(for key: Key, using transform: (A) -> A) {
-        updateExistingAttributes(for: key, in: fullRange, using: transform)
-    }
-
-    func updateExistingAttributes<A>(for key: Key, in range: NSRange, using transform: (A) -> A) {
-        var existingValues = [(value: A, range: NSRange)]()
-        enumerateAttributes(for: key, in: range) { existingValues.append(($0, $1)) }
-        existingValues.forEach { addAttribute(key, value: transform($0.0), range: $0.1) }
-    }
-
-    func addAttributesToRanges(attributes: [NSAttributedString.Key: Any], ranges: [NSRange]) {
-        ranges.forEach { paragraphRange in
-            self.addAttributes(attributes, range: paragraphRange)
-        }
-    }
-//    
-//    func removeAttribute(for key: Key) {
-//        removeAttribute(key, range: wholeRange)
-//    }
-//    
-//    func replaceAttribute(for key: Key, value: Any) {
-//        replaceAttribute(for: key, value: value, inRange: wholeRange)
-//    }
-//    
-//    func replaceAttribute(for key: Key, value: Any, inRange range: NSRange) {
-//        removeAttribute(key, range: range)
-//        addAttribute(key, value: value, range: range)
-//    }
-//    
-//
-//    func addAttributeInMissingRanges<A>(for key: Key, value: A) {
-//        addAttributeInMissingRanges(for: key, value: value, within: wholeRange)
-//    }
-//
-//    func addAttributeInMissingRanges<A>(for key: Key, value: A, within range: NSRange) {
-//        rangesMissingAttribute(for: key, in: range).forEach {
-//            addAttribute(key, value: value, range: $0)
-//        }
-//    }
-//    public func trimCharactersInSet(charSet: CharacterSet) {
-//        var range = (string as NSString).rangeOfCharacter(from: charSet as CharacterSet)
-//
-//        // Trim leading characters from character set.
-//        while range.length != 0 && range.location == 0 {
-//            replaceCharacters(in: range, with: "")
-//            range = (string as NSString).rangeOfCharacter(from: charSet)
-//        }
-//
-//        // Trim trailing characters from character set.
-//        range = (string as NSString).rangeOfCharacter(from: charSet, options: .backwards)
-//        while range.length != 0 && NSMaxRange(range) == length {
-//            replaceCharacters(in: range, with: "")
-//            range = (string as NSString).rangeOfCharacter(from: charSet, options: .backwards)
-//        }
-//    }
-//
-//    func addAttribute(_ key: NSAttributedString.Key, value: Any) {
-//        self.addAttribute(key, value: value, range: fullRange)
-//    }
-}
-
 extension UIFont {
 
     var isStrong: Bool {
@@ -193,16 +118,26 @@ extension NSAttributedString {
 //        return ranges
 //    }
 
+    func isBeginningOfParagraph(range: NSRange) -> NSRange? {
+        //guard range.length == 0 else { return nil }
+        let allParagraphRangesLocations = self.paragraphRanges()
+        return allParagraphRangesLocations.filter { ($0.location == range.location) || ($0.length + $0.location == range.location) }.last
+    }
+
     func paragraphsOfRange(range: NSRange) -> [NSRange] {
         let allParagraphRanges = self.paragraphRanges()
-        return allParagraphRanges.filter { (range.location <= $0.location + $0.length) && (range.location + range.length > $0.location) }
+        var paragraphs = allParagraphRanges.filter { (range.location < $0.location + $0.length) && (range.location + range.length > $0.location) }
+        if let paragraph = isBeginningOfParagraph(range: range) {
+            paragraphs.append(paragraph)
+        }
+        return paragraphs
     }
 
     func paragraphRanges() -> [NSRange] {
         guard self.length > 0 else { return [] }
 
         func nextParagraphRange(at location: Int) -> NSRange {
-            return NSString(string: self.string).paragraphRange(for: NSRange(location: location, length: 1))
+            return NSString(string: self.string).paragraphRange(for: NSRange(location: location, length: 0))
         }
 
         var result = [nextParagraphRange(at: 0)]
@@ -291,4 +226,79 @@ extension NSAttributedString {
         return attributedSubstring(from: NSRange(location: 0, length: length))
     }
 
+}
+
+extension NSMutableAttributedString {
+
+    func setAttributes(_ attrs: [Key: Any]) {
+        setAttributes(attrs, range: fullRange)
+    }
+
+    func addAttribute(for key: Key, value: Any) {
+        addAttribute(key, value: value, range: fullRange)
+    }
+
+    func addAttributes(_ attrs: [Key: Any]) {
+        addAttributes(attrs, range: fullRange)
+    }
+
+    func updateExistingAttributes<A>(for key: Key, using transform: (A) -> A) {
+        updateExistingAttributes(for: key, in: fullRange, using: transform)
+    }
+
+    func updateExistingAttributes<A>(for key: Key, in range: NSRange, using transform: (A) -> A) {
+        var existingValues = [(value: A, range: NSRange)]()
+        enumerateAttributes(for: key, in: range) { existingValues.append(($0, $1)) }
+        existingValues.forEach { addAttribute(key, value: transform($0.0), range: $0.1) }
+    }
+
+    func addAttributesToRanges(attributes: [NSAttributedString.Key: Any], ranges: [NSRange]) {
+        ranges.forEach { paragraphRange in
+            self.addAttributes(attributes, range: paragraphRange)
+        }
+    }
+//
+//    func removeAttribute(for key: Key) {
+//        removeAttribute(key, range: wholeRange)
+//    }
+//
+//    func replaceAttribute(for key: Key, value: Any) {
+//        replaceAttribute(for: key, value: value, inRange: wholeRange)
+//    }
+//
+//    func replaceAttribute(for key: Key, value: Any, inRange range: NSRange) {
+//        removeAttribute(key, range: range)
+//        addAttribute(key, value: value, range: range)
+//    }
+//
+//
+//    func addAttributeInMissingRanges<A>(for key: Key, value: A) {
+//        addAttributeInMissingRanges(for: key, value: value, within: wholeRange)
+//    }
+//
+//    func addAttributeInMissingRanges<A>(for key: Key, value: A, within range: NSRange) {
+//        rangesMissingAttribute(for: key, in: range).forEach {
+//            addAttribute(key, value: value, range: $0)
+//        }
+//    }
+//    public func trimCharactersInSet(charSet: CharacterSet) {
+//        var range = (string as NSString).rangeOfCharacter(from: charSet as CharacterSet)
+//
+//        // Trim leading characters from character set.
+//        while range.length != 0 && range.location == 0 {
+//            replaceCharacters(in: range, with: "")
+//            range = (string as NSString).rangeOfCharacter(from: charSet)
+//        }
+//
+//        // Trim trailing characters from character set.
+//        range = (string as NSString).rangeOfCharacter(from: charSet, options: .backwards)
+//        while range.length != 0 && NSMaxRange(range) == length {
+//            replaceCharacters(in: range, with: "")
+//            range = (string as NSString).rangeOfCharacter(from: charSet, options: .backwards)
+//        }
+//    }
+//
+//    func addAttribute(_ key: NSAttributedString.Key, value: Any) {
+//        self.addAttribute(key, value: value, range: fullRange)
+//    }
 }

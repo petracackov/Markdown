@@ -317,13 +317,6 @@ private extension RichEditorTextView {
         let prefixLength = MarkdownStyles.prefixWithSpace.length
         return string.prefix(length: prefixLength).string == MarkdownStyles.prefixWithSpace.string
     }
-
-    func isBeginningOfParagraph(range: NSRange) -> Bool {
-        guard range.length == 0 else { return false }
-        let allParagraphRangesLocations = textView.attributedText.paragraphRanges()
-        return allParagraphRangesLocations.contains(where: { ($0.location == range.location) || ($0.length + $0.location == range.location) })
-    }
-
 }
 
 
