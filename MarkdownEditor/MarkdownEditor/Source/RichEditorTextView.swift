@@ -179,7 +179,12 @@ extension RichEditorTextView {
     }
 
     func selectList() {
+        if headingIsActive {
+            selectHeading()
+        }
+
         listIsActive.toggle()
+
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
 
         // To prevent wrong strings in specific range, ranges must be sorted from the greatest to the smallest. The string will be modified in for loop from the bigger range location to the smallest. That is because that the changes on the specific range do not change the string in the smaller range
@@ -198,19 +203,19 @@ extension RichEditorTextView {
                 let prefixWithParagraphString = NSMutableAttributedString(attributedString: MarkdownStyles.prefixWithSpace)
                 prefixWithParagraphString.append(paragraphString)
                 paragraphString = prefixWithParagraphString
-                if paragraphRange.location < updatedRange.location {
-                    updatedRange.location += 2
+                if paragraphRange.location <= updatedRange.location {
+                    updatedRange.location += MarkdownStyles.prefixLength
                 } else if updatedRange.length > 0 {
-                    updatedRange.length += 2
+                    updatedRange.length += MarkdownStyles.prefixLength
                 }
 
             } else if !listIsActive, stringHasPrefix(paragraphString) {
                 // remove prefix from the current paragraph if it exists
                 paragraphString.replaceCharacters(in: NSRange(location: 0, length: MarkdownStyles.prefixWithSpace.length), with: "")
                 if paragraphRange.location < updatedRange.location {
-                    updatedRange.location -= 2
+                    updatedRange.location -= MarkdownStyles.prefixLength
                 } else if updatedRange.length > 0 {
-                    updatedRange.length -= 2
+                    updatedRange.length -= MarkdownStyles.prefixLength
                 }
             }
 
@@ -226,6 +231,11 @@ extension RichEditorTextView {
 
     func selectHeading() {
 
+        // first remove list if it is active
+        if listIsActive {
+            selectList()
+        }
+
         headingIsActive.toggle()
 
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
@@ -233,8 +243,8 @@ extension RichEditorTextView {
         let attributes = headingIsActive ? headingAttributes : baseAttributes
         mutableString.addAttributesToRanges(attributes: attributes, ranges: selectedParagraphs)
 
+
         if headingIsActive {
-            listIsActive = false
             italicIsActive = false
             boldIsActive = false
         }
@@ -247,7 +257,10 @@ private extension RichEditorTextView {
 
     private func updateSelectedState(forRange range: NSRange) {
         var biggerRange = range
-        if range.length == 0 && range.location > 0 {
+
+        if attributedString?.isBeginningOfParagraph(range: range) != nil {
+            biggerRange.length += 1
+        } else if range.length == 0 && range.location > 0 {
             biggerRange.length += 1
             biggerRange.location -= 1
         }
@@ -259,13 +272,21 @@ private extension RichEditorTextView {
         boldIsActive = AttributedStringTool.allFontsContainTrait(.traitBold, attributedString: attributedString) && !headingIsActive
         italicIsActive = AttributedStringTool.allFontsContainTrait(.traitItalic, attributedString: attributedString)
 
+        let paragraphs = self.attributedString?.paragraphsOfRange(range: range)
+
+        if listIsActive, let difference = paragraphs?.map({ abs(range.location - $0.location) }).first(where: { $0 < MarkdownStyles.prefixLength }) {
+            textView.selectedRange.location += MarkdownStyles.prefixLength - difference
+        }
+
     }
 
+    // TODO: handle deletion and addition (possibly selected range, new line) separately
     private func updateString(with string: String, at range: NSRange) {
         guard let attributedString = attributedString else { return }
         let mutableText = NSMutableAttributedString(attributedString: attributedString)
         let attributedNewString = NSMutableAttributedString(string: string)
         attributedNewString.setAttributes(baseAttributes)
+
 
         if boldIsActive {
             AttributedStringTool.addTrait(.traitBold, to: attributedNewString, in: attributedNewString.fullRange)
@@ -277,6 +298,17 @@ private extension RichEditorTextView {
 
         if headingIsActive {
             attributedNewString.setAttributes(headingAttributes)
+        }
+
+        if listIsActive {
+
+            if string == "\n" {
+                attributedNewString.append(MarkdownStyles.prefixWithSpace)
+            } else if attributedNewString.length == 0, currentSelectedRange.length == 0, self.attributedString?.isBeginningOfParagraph(range: range, prefixLength: MarkdownStyles.prefixLength) != nil {
+                selectList()
+                return
+            }
+            attributedNewString.addAttributes(listAttributes)
         }
 
         mutableText.replaceCharacters(in: range, with: attributedNewString)
@@ -310,8 +342,6 @@ private extension RichEditorTextView {
 }
 
 private extension RichEditorTextView {
-
-
 
     func stringHasPrefix(_ string: NSAttributedString) -> Bool {
         let prefixLength = MarkdownStyles.prefixWithSpace.length

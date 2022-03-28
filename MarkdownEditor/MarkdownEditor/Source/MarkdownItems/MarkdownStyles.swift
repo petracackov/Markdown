@@ -43,6 +43,8 @@ class MarkdownStyles {
         return mutablePrefix
     }
 
+    static var prefixLength: Int { prefixWithSpace.length }
+
     static var listParagraphStyle: NSParagraphStyle  { itemParagraphStyler.leadingParagraphStyle(prefixWidth: attributedPrefix.size().width) }
 
 

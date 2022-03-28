@@ -118,26 +118,55 @@ extension NSAttributedString {
 //        return ranges
 //    }
 
+    /// If cursor is at the beginning of paragraph, and no text is selected
+    /// - Parameter range: provided range.
+    /// - Returns: range of paragraph that provided range is at the beginning of. If provided range is a selection (has length greater than 0) nil is returned
     func isBeginningOfParagraph(range: NSRange) -> NSRange? {
-        //guard range.length == 0 else { return nil }
+        guard range.length == 0 else { return nil }
         let allParagraphRangesLocations = self.paragraphRanges()
-        return allParagraphRangesLocations.filter { ($0.location == range.location) || ($0.length + $0.location == range.location) }.last
+        return allParagraphRangesLocations.first { $0.location  == range.location }
     }
 
+    /// If cursor is at the beginning of paragraph, and no text is selected
+    /// - Parameter range: provided range.
+    /// - Returns: range of paragraph that provided range is at the beginning of. If provided range is a selection (has length greater than 0) nil is returned
+    func isBeginningOfParagraph(range: NSRange, prefixLength: Int) -> NSRange? {
+        guard range.length < prefixLength else { return nil }
+        let allParagraphRangesLocations = self.paragraphRanges()
+        return allParagraphRangesLocations.first { ($0.location + prefixLength)  == range.location + range.length }
+    }
+
+    func isEndOfString(range: NSRange) -> NSRange? {
+        guard range.length == 0 else { return nil }
+        guard range.location == fullRange.length else { return nil }
+        // TODO: improve that.... There is no new paragraph generated if there is an empty new line at the end of string
+        if string.last == "\n" {
+            return range
+        } else {
+            return self.paragraphRanges().last
+        }
+    }
+
+
+    /// Returns all paragraph ranges that provided range is in
+    /// - Parameter range: provided range
+    /// - Returns: array of ranges containing provided range sorted by location assending
     func paragraphsOfRange(range: NSRange) -> [NSRange] {
         let allParagraphRanges = self.paragraphRanges()
         var paragraphs = allParagraphRanges.filter { (range.location < $0.location + $0.length) && (range.location + range.length > $0.location) }
         if let paragraph = isBeginningOfParagraph(range: range) {
             paragraphs.append(paragraph)
+        } else if let paragraph = isEndOfString(range: range) {
+            paragraphs.append(paragraph)
         }
-        return paragraphs
+        return paragraphs.sorted { $0.location < $1.location }
     }
 
     func paragraphRanges() -> [NSRange] {
         guard self.length > 0 else { return [] }
 
         func nextParagraphRange(at location: Int) -> NSRange {
-            return NSString(string: self.string).paragraphRange(for: NSRange(location: location, length: 0))
+            return NSString(string: self.string).paragraphRange(for: NSRange(location: location, length: 1))
         }
 
         var result = [nextParagraphRange(at: 0)]
@@ -146,7 +175,7 @@ extension NSAttributedString {
             result.append(nextParagraphRange(at: currentLocation))
         }
 
-        return result.filter { $0.length > 1 }
+        return result//.filter { $0.length > 1 }
     }
     
 
