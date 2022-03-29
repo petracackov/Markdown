@@ -286,6 +286,11 @@ extension NSMutableAttributedString {
             self.addAttributes(attributes, range: paragraphRange)
         }
     }
+    func setAttributesToRanges(attributes: [NSAttributedString.Key: Any], ranges: [NSRange]) {
+        ranges.forEach { paragraphRange in
+            self.setAttributes(attributes, range: paragraphRange)
+        }
+    }
 //
 //    func removeAttribute(for key: Key) {
 //        removeAttribute(key, range: wholeRange)
