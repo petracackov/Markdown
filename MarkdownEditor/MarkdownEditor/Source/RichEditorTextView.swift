@@ -73,13 +73,6 @@ class RichEditorTextView: UIView {
         .paragraphStyle : MarkdownStyles.listParagraphStyle
     ]
 
-//    private let prefixAttributes:  [NSAttributedString.Key: Any] = [
-//        .foregroundColor : MarkdownStyles.colorCollection.listItemPrefix,
-//        .font : MarkdownStyles.fontCollection.listItemPrefix,
-//        .paragraphStyle : MarkdownStyles.listParagraphStyle
-//    ]
-
-
     public private(set) var attributedString: NSAttributedString? {
         didSet {
             // check tor same value is there to prevent creating a cycle -> DO NOT TOUCH IT
@@ -91,6 +84,8 @@ class RichEditorTextView: UIView {
 
     // MARK: - TextView selected options
 
+    /// should only be updated by delegate method
+    /// Every time the attributed string s set on textView (so on every change) the selected state is reset. Therefore a reference of last cursor position is needed
     lazy private var currentSelectedRange: NSRange = NSRange(location: attributedString?.length ?? 0, length: 0) {
         didSet {
             let maxLocation = attributedString?.length ?? 0
@@ -152,6 +147,10 @@ class RichEditorTextView: UIView {
         addSubviewWithPinnedEdgesToView(self, subview: vStack)
     }
 
+    /// Use for setting the new (updated) string in text view. It also adjusts/preserves the current cursor/selection state. Do not directly change attributedText on text view.
+    /// - Parameters:
+    ///   - string: updated string that replaces the current string in text view
+    ///   - newRange: updated cursor/selected range based on changes made on new attributed string. Default value is preserving previous state -> currentSelectedRange.
     func updateTextField(with string: NSAttributedString, newRange: NSRange? = nil) {
         let currentRange = currentSelectedRange
         attributedString = string
@@ -164,6 +163,7 @@ class RichEditorTextView: UIView {
 
 extension RichEditorTextView {
 
+    /// Toggles bold attribute in the current selected range of the attributedString in textView
     func toggleBold() {
         guard headingIsActive == false else { return }
         boldIsActive.toggle()
@@ -172,6 +172,7 @@ extension RichEditorTextView {
         updateTextField(with: mutableString)
     }
 
+    /// Toggles italic attribute in the current selected range of the attributedString in textView
     func toggleItalic() {
         guard headingIsActive == false else { return }
         italicIsActive.toggle()
@@ -180,6 +181,7 @@ extension RichEditorTextView {
         updateTextField(with: mutableString)
     }
 
+    /// Toggles list attribute in the current selected range of the attributedString in textView
     func toggleList() {
         guard let attributedString = attributedString else { return }
         listIsActive.toggle()
@@ -187,33 +189,60 @@ extension RichEditorTextView {
         updateTextField(with: updatedString.string, newRange: updatedString.range)
     }
 
+    /// Toggles heading attribute in the current selected range of the attributedString in textView
     func toggleHeading() {
         guard let attributedString = attributedString else { return }
         headingIsActive.toggle()
 
-        // first remove/clean string selection of any list paragraphs if there are any
-        let cleanString = selectList(false, range: currentSelectedRange, string: attributedString)
-        // create new string with new attributes (heading or base depends on current state) at specific range
-        let newAttributedString = selectHeading(headingIsActive, range: cleanString.range, string: cleanString.string)
-        updateTextField(with: newAttributedString, newRange: cleanString.range)
+
+        // let cleanString = selectList(false, range: currentSelectedRange, string: attributedString)
+
+        let newAttributedString = selectHeading(headingIsActive, range: currentSelectedRange, string: attributedString)
+        updateTextField(with: newAttributedString.string, newRange: newAttributedString.range)
     }
 
-    private func selectHeading(_ selected: Bool, range: NSRange, string: NSAttributedString) -> NSMutableAttributedString {
-        let mutableString = NSMutableAttributedString(attributedString:  string)
-        let selectedParagraphs = string.paragraphsOfRange(range: range)
+
+    /// Adds heading parameters or removes them on selected range. It also removes list attributes if needed.
+    /// - Parameters:
+    ///   - selected: state to determine if heading attributes should should be added or removed
+    ///   - range: range to remove or apply the heading to
+    ///   - string: string to apply the heading to on corresponding range
+    ///   - cleanString: if other attributes (list ones) should also be removed
+    /// - Returns: returns an updated string with updated range that those changes were made on
+    private func selectHeading(_ selected: Bool, range: NSRange, string: NSAttributedString, cleanString: Bool = true) -> (string: NSMutableAttributedString, range: NSRange) {
+
+        var mutableString = NSMutableAttributedString(attributedString:  string)
+        var range = range
+
+        if cleanString {
+            // first remove/clean string selection of any list paragraphs if there are any and updates the current range
+            let cleanString = selectList(false, range: range, string: mutableString, cleanString: false)
+            mutableString = cleanString.string
+            range = cleanString.range
+        }
+
+        // create new string with new attributes (heading or base base attributes depends on selected state) at specific range
+        let selectedParagraphs = mutableString.paragraphsOfRange(range: range)
         let attributes = selected ? headingAttributes : baseAttributes
         mutableString.setAttributesToRanges(attributes: attributes, ranges: selectedParagraphs)
-        return mutableString
+        return (mutableString, range)
     }
 
-    private func selectList(_ selected: Bool, range: NSRange, string: NSAttributedString) -> (string: NSMutableAttributedString, range: NSRange) {
+    /// Adds list parameters or removes them on selected range. It also removes heading attributes if needed.
+    /// - Parameters:
+    ///   - selected: state to determine if list attributes should be added or removed
+    ///   - range: range to remove or apply the list at
+    ///   - string: string to apply the list to on corresponding range
+    ///   - cleanString: if other attributes (heading one) should also be removed
+    /// - Returns: returns an updated string with updated range that those changes were made on
+    private func selectList(_ selected: Bool, range: NSRange, string: NSAttributedString, cleanString: Bool = true) -> (string: NSMutableAttributedString, range: NSRange) {
 
         let mutableString = NSMutableAttributedString(attributedString:  string)
 
         let paragraphStyle = selected ? MarkdownStyles.listParagraphStyle : MarkdownStyles.paragraphStyles.body
 
         // To prevent wrong strings in specific range, ranges must be sorted from the greatest to the smallest. The string will be modified in for loop from the bigger range location to the smallest. That is because that the changes on the specific range do not change the string in the smaller range
-        var selectedParagraphs = textView.attributedText.paragraphsOfRange(range: range).sorted { $0.location > $1.location }
+        var selectedParagraphs = string.paragraphsOfRange(range: range).sorted { $0.location > $1.location }
 
         // If there isn't any text yet append the current selected range -> 0, 0
         if selectedParagraphs.isEmpty {
@@ -228,8 +257,8 @@ extension RichEditorTextView {
             var paragraphString = NSMutableAttributedString(attributedString: mutableString.attributedSubstring(from: paragraphRange))
 
             // Remove all heading styles that are in the selected range
-            if MarkdownStyles.isHeading(paragraphString) {
-                paragraphString = selectHeading(false, range: paragraphString.fullRange, string: paragraphString)
+            if MarkdownStyles.isHeading(paragraphString), cleanString {
+                paragraphString = selectHeading(false, range: paragraphString.fullRange, string: paragraphString, cleanString: false).string
             }
 
             // append prefix to the current paragraph string if it does not yet exist
@@ -288,7 +317,7 @@ private extension RichEditorTextView {
     /// - Parameter range: range in witch the selection is based of relative to the whole attributed string
     private func updateSelectedState(forRange range: NSRange) {
 
-        // if range has lenght 0 there are no attributes there to determine what style is selected. The bigger range selects text in front or behind cursor depending on its location.
+        // if range has length 0 there are no attributes there to determine what style is selected. The bigger range selects text in front or behind cursor depending on its location.
         var biggerRange = range
 
         // if cursor is at the beginning (and there is no text selected) of paragraph adapt the style of the character following/on the right of the current cursor position
@@ -308,70 +337,100 @@ private extension RichEditorTextView {
         boldIsActive = AttributedStringTool.allFontsContainTrait(.traitBold, attributedString: attributedString) && !headingIsActive
         italicIsActive = AttributedStringTool.allFontsContainTrait(.traitItalic, attributedString: attributedString)
 
-        let paragraphs = self.attributedString?.paragraphsOfRange(range: range)
+        // adjust cursor location/currentSelected state if its location lands on the list prefix -> editing of the list prefix should not be allowed
+        self.attributedString?.paragraphsOfRange(range: range).forEach { paragraph in
+            let paragraphString = textView.attributedText.attributedSubstring(from: paragraph)
 
-        // if current selection is list do not allow cursor to be positioned where the prefix is
-        if listIsActive, let difference = paragraphs?.map({ abs(range.location - $0.location) }).first(where: { $0 < MarkdownStyles.prefixLength }) {
-            textView.selectedRange.location += MarkdownStyles.prefixLength - difference
-            textView.selectedRange.length -= MarkdownStyles.prefixLength - difference
+            if MarkdownStyles.isList(paragraphString) {
+                let lowerBoundDifference = abs(range.location - paragraph.location)
+                let upperBoundDifference = abs(range.location + range.length - paragraph.location)
+
+                // if the cursor is somewhere where the prefix is move it after prefix
+                if lowerBoundDifference < MarkdownStyles.prefixLength {
+                    textView.selectedRange.location += MarkdownStyles.prefixLength - lowerBoundDifference
+                    // if cursor has selected text also adjust selection length (make it so it does not select more text)
+                    if range.length > 0 {
+                        textView.selectedRange.length -= MarkdownStyles.prefixLength - lowerBoundDifference
+                    }
+                // if the selected text, the end of selection is where the prefix is adjust the selection so it ends outside of prefix
+                } else if upperBoundDifference <  MarkdownStyles.prefixLength {
+                    textView.selectedRange.length -= MarkdownStyles.prefixLength - upperBoundDifference
+                }
+            }
         }
-
     }
 
-    // TODO: handle deletion and addition (possibly selected range, new line) separately
+    // TODO: improve -> handle the replacing characters and adding characters differently. Currently if text with different attributes is selected the replacing string does not adapt the characters quite correctly -> edge case (select heading and part of list and press a character. We get heading with partially normal/body styled text
+    /// Updates the current attributed string in textView with new string
+    /// - Parameters:
+    ///   - string: new string that should replace characters in current attributed string in textView
+    ///   - range: range on witch the new string should replace the characters
     private func updateString(with string: String, at range: NSRange) {
         guard let attributedString = attributedString else { return }
-        let mutableText = NSMutableAttributedString(attributedString: attributedString)
-        let attributedNewString = NSMutableAttributedString(string: string)
-        attributedNewString.setAttributes(baseAttributes)
+        let wholeText = NSMutableAttributedString(attributedString: attributedString)
+        let newAttributedString = NSMutableAttributedString(string: string)
+        newAttributedString.setAttributes(baseAttributes)
 
         if boldIsActive {
-            AttributedStringTool.addTrait(.traitBold, to: attributedNewString, in: attributedNewString.fullRange)
+            // if bold is active add bold trait to the new string
+            AttributedStringTool.addTrait(.traitBold, to: newAttributedString, in: newAttributedString.fullRange)
         }
 
         if italicIsActive {
-            AttributedStringTool.addTrait(.traitItalic, to: attributedNewString, in: attributedNewString.fullRange)
+            // if italic is active add italic trait to the new string
+            AttributedStringTool.addTrait(.traitItalic, to: newAttributedString, in: newAttributedString.fullRange)
         }
 
         if headingIsActive {
-            attributedNewString.setAttributes(headingAttributes)
+            // if heading is active add heading attributes to the new string
+            newAttributedString.setAttributes(headingAttributes)
         }
 
         if listIsActive {
+            // if paragraph is active (cursor is currently somewhere in the paragraph style)
+            // and if string represents new line
             if string == "\n" {
                 let previousRange = NSRange(location: range.location - MarkdownStyles.prefixLength, length: MarkdownStyles.prefixLength)
-                let previousString = mutableText.attributedSubstring(from: previousRange)
+                let previousString = wholeText.attributedSubstring(from: previousRange)
+                // and if range before current selected range has prefix remove the list styling
+                // (and return from function since cursor and selection is handled in the list logic.
                 if stringHasPrefix(previousString) {
                     toggleList()
                     return
+                // otherwise append prefix to new string
                 } else {
-                    attributedNewString.append(MarkdownStyles.prefixWithSpace)
+                    newAttributedString.append(MarkdownStyles.prefixWithSpace)
                 }
-            } else if attributedNewString.length == 0, currentSelectedRange.length == 0, self.attributedString?.isBeginningOfParagraph(range: range, prefixLength: MarkdownStyles.prefixLength) != nil {
+            //  if deletion is triggered and cursor is in front of prefix then remove list styling and return from function
+            } else if newAttributedString.length == 0, currentSelectedRange.length == 0, self.attributedString?.isBeginningOfParagraph(range: range, prefixLength: MarkdownStyles.prefixLength) != nil {
                 toggleList()
                 return
             }
-            attributedNewString.addAttributes(listAttributes)
+            // add list attributes to new string
+            newAttributedString.addAttributes(listAttributes)
         }
 
-        mutableText.replaceCharacters(in: range, with: attributedNewString)
+        // update existing string with new one
+        wholeText.replaceCharacters(in: range, with: newAttributedString)
+
         var currentRange = currentSelectedRange
 
-        // TODO:handle emoji because character count is fifferent that lenght
         // An empty string is replacing the previous character -> deletion of one character
-        if attributedNewString.length == 0, currentRange.length == 0 {
+        if newAttributedString.length == 0, currentRange.length == 0 {
             currentRange.location -= 1
         } else {
-            currentRange.location += attributedNewString.length
+            currentRange.location += newAttributedString.length
         }
         // if text was previously selected (the length of range was not 0) after replacing characters it should not be selected anymore
         currentRange.length = 0
 
-        self.attributedString = updateStringWithLinkAttributes(mutableText)
-        textView.selectedRange = currentRange
+        // detect if string has any links and update them with special styling
+        let newString = updateStringWithLinkAttributes(wholeText)
+        updateTextField(with: newString, newRange: currentRange)
 
     }
 
+    /// detects if any links are present in the string and adds a special styling/color to them
     private func updateStringWithLinkAttributes(_ string: NSAttributedString) -> NSAttributedString {
 
         let mutableText = NSMutableAttributedString(attributedString: string)
@@ -440,7 +499,7 @@ extension RichEditorTextView: UITextViewDelegate {
 
 class MyTextView: UITextView {
 
-    // TODO: calculate caret position and size based on font
+    // TODO: calculate caret position and size based on font -> nice to have
 //    override func caretRect(for position: UITextPosition) -> CGRect {
 //        var superRect = super.caretRect(for: position)
 //        guard let font = self.font else { return superRect }
