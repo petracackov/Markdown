@@ -73,12 +73,12 @@ class RichEditorTextView: UIView {
         .paragraphStyle : MarkdownStyles.listParagraphStyle
     ]
 
-    private var linkHighlightingAttributes: AttributedStringTools.AsAttributes {
-        return AttributedStringTools.AsaBuilder()
-            .textColor(GIDGlobals.Color.Primary.electricBlue)
-            .underlineStyle(NSUnderlineStyle.single.rawValue)
-            .build()
-    }
+//    private var linkHighlightingAttributes: AttributedStringTools.AsAttributes {
+//        return AttributedStringTools.AsaBuilder()
+//            .textColor(GIDGlobals.Color.Primary.electricBlue)
+//            .underlineStyle(NSUnderlineStyle.single.rawValue)
+//            .build()
+//    }
 
     public private(set) var attributedString: NSAttributedString? {
         didSet {

@@ -88,7 +88,7 @@ class ViewController: UIViewController {
         return button
     }()
 
-    private let markdown: String = "normal line \n - First **item** \n still first item \n- Second item \n    - Indented item \n    - Indented item \n- Fourth item \n\n normal line"//"empty line \n - first line \n still **first line** \n- second line \n\nThird normal line"//"# heding\n hello \n - **hello hello hello hello \nhello hello hello hello hello**\n- **,kk _boldItaliwc_**\n\n**hello** \n _italic_ **,kk _boldItalic_** www.google.com👚"
+    private let markdown: String = "nooormal line \n kjdg \n laihg \n- First **item** \n still first item \n \n \n- Second item \n- Indented item \n    - Indented item \n- Fourth item \n\n normal line"//"empty line \n - first line \n still **first line** \n- second line \n\nThird normal line"//"# heding\n hello \n - **hello hello hello hello \nhello hello hello hello hello**\n- **,kk _boldItaliwc_**\n\n**hello** \n _italic_ **,kk _boldItalic_** www.google.com👚"
 
     override func viewDidLoad() {
         super.viewDidLoad()
