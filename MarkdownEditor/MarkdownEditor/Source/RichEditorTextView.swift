@@ -73,6 +73,13 @@ class RichEditorTextView: UIView {
         .paragraphStyle : MarkdownStyles.listParagraphStyle
     ]
 
+    private var linkHighlightingAttributes: AttributedStringTools.AsAttributes {
+        return AttributedStringTools.AsaBuilder()
+            .textColor(GIDGlobals.Color.Primary.electricBlue)
+            .underlineStyle(NSUnderlineStyle.single.rawValue)
+            .build()
+    }
+
     public private(set) var attributedString: NSAttributedString? {
         didSet {
             // check tor same value is there to prevent creating a cycle -> DO NOT TOUCH IT
@@ -445,7 +452,7 @@ private extension RichEditorTextView {
 
 private extension RichEditorTextView {
 
-    func stringHasPrefix(_ string: NSAttributedString) -> Bool {
+    private func stringHasPrefix(_ string: NSAttributedString) -> Bool {
         let prefixLength = MarkdownStyles.prefixWithSpace.length
         return string.prefix(length: prefixLength).string == MarkdownStyles.prefixWithSpace.string
     }

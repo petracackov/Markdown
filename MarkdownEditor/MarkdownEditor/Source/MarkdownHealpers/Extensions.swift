@@ -148,7 +148,7 @@ extension NSAttributedString {
     }
 
 
-    /// Returns all paragraph ranges that provided range is in
+    /// Returns all paragraph ranges that include provided range
     /// - Parameter range: provided range
     /// - Returns: array of ranges containing provided range sorted by location assending
     func paragraphsOfRange(range: NSRange) -> [NSRange] {
