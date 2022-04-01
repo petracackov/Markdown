@@ -117,7 +117,7 @@ extension MarkdownStyles {
             let string = attributedString.attributedSubstring(from: range)
             types.append(evaluateAttributes(attribute, in: string))
         }
-        return types.allSatisfy { $0 == .heading } && !types.isEmpty
+        return types.filter({ $0 != .paragraph }).allSatisfy { $0 == .heading } && !types.isEmpty
     }
 
     static func isParagraph(font: UIFont?) -> Bool {
