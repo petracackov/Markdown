@@ -229,7 +229,7 @@ extension RichEditorTextView {
         }
 
         // create new string with new attributes (heading or base base attributes depends on selected state) at specific range
-        let selectedParagraphs = mutableString.paragraphsOfRange(range: range)
+        let selectedParagraphs = mutableString.linesOfRange(range: range)
         let attributes = selected ? headingAttributes : baseAttributes
         mutableString.setAttributesToRanges(attributes: attributes, ranges: selectedParagraphs)
         return (mutableString, range)
@@ -249,7 +249,7 @@ extension RichEditorTextView {
         let paragraphStyle = selected ? MarkdownStyles.listParagraphStyle : MarkdownStyles.paragraphStyles.body
 
         // To prevent wrong strings in specific range, ranges must be sorted from the greatest to the smallest. The string will be modified in for loop from the bigger range location to the smallest. That is because that the changes on the specific range do not change the string in the smaller range
-        var selectedParagraphs = string.paragraphsOfRange(range: range).sorted { $0.location > $1.location }
+        var selectedParagraphs = string.linesOfRange(range: range).sorted { $0.location > $1.location }
 
         // If there isn't any text yet append the current selected range -> 0, 0
         if selectedParagraphs.isEmpty {
@@ -328,7 +328,7 @@ private extension RichEditorTextView {
         var biggerRange = range
 
         // if cursor is at the beginning (and there is no text selected) of paragraph adapt the style of the character following/on the right of the current cursor position
-        if attributedString?.isBeginningOfParagraph(range: range) != nil {
+        if attributedString?.isBeginningOfLine(range: range) != nil {
             biggerRange.length += 1
         // if the cursor does not select any text (length == 0), adapt the style of the character on the left side of cursor location
         } else if range.length == 0 && range.location > 0 {
@@ -345,10 +345,10 @@ private extension RichEditorTextView {
         italicIsActive = AttributedStringTool.allFontsContainTrait(.traitItalic, attributedString: attributedString)
 
         // adjust cursor location/currentSelected state if its location lands on the list prefix -> editing of the list prefix should not be allowed
-        self.attributedString?.paragraphsOfRange(range: range).forEach { paragraph in
+        self.attributedString?.linesOfRange(range: range).forEach { paragraph in
             let paragraphString = textView.attributedText.attributedSubstring(from: paragraph)
 
-            if MarkdownStyles.isList(paragraphString) {
+            if MarkdownStyles.isList(paragraphString), stringHasPrefix(paragraphString) {
                 let lowerBoundDifference = abs(range.location - paragraph.location)
                 let upperBoundDifference = abs(range.location + range.length - paragraph.location)
 
@@ -409,7 +409,7 @@ private extension RichEditorTextView {
                     newAttributedString.append(MarkdownStyles.prefixWithSpace)
                 }
             //  if deletion is triggered and cursor is in front of prefix then remove list styling and return from function
-            } else if newAttributedString.length == 0, currentSelectedRange.length == 0, self.attributedString?.isBeginningOfParagraph(range: range, prefixLength: MarkdownStyles.prefixLength) != nil {
+            } else if newAttributedString.length == 0, currentSelectedRange.length == 0, self.attributedString?.isBeginningOfLine(range: range, prefixLength: MarkdownStyles.prefixLength) != nil {
                 toggleList()
                 return
             }

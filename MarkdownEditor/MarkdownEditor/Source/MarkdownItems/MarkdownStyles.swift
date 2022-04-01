@@ -11,18 +11,28 @@ import Down
 class MarkdownStyles {
 
     private static let fontFamilyName = "Averta"
-    static let colorCollection = StaticColorCollection(heading1: .black, body: .black, link: .blue, listItemPrefix: .black)
+//    static let colorCollection = StaticColorCollection(heading1: .black, body: .black, link: .blue, listItemPrefix: .black)
+//
+//    static let fontCollection = StaticFontCollection(heading1: UIFont(name: fontFamilyName + "-Bold", size: 28) ?? .systemFont(ofSize: 28),
+//                                                     body: UIFont(name: fontFamilyName, size: 20) ?? .systemFont(ofSize: 20),
+//                                                     listItemPrefix: UIFont(name: fontFamilyName, size: 20) ?? UIFont.systemFont(ofSize: 20))
+//
+//    static let paragraphStyles = StaticParagraphStyleCollection()
+//
+//    static let listItemOptions = ListItemOptions()
+//
+//    static let itemParagraphStyler = ListItemParagraphStyler(options: listItemOptions,
+//                                                             prefixFont: fontCollection.listItemPrefix)
 
-    static let fontCollection = StaticFontCollection(heading1: UIFont(name: fontFamilyName + "-Bold", size: 28) ?? .systemFont(ofSize: 28),
-                                                     body: UIFont(name: fontFamilyName, size: 20) ?? .systemFont(ofSize: 20),
-                                                     listItemPrefix: UIFont(name: fontFamilyName, size: 20) ?? UIFont.systemFont(ofSize: 20))
+    static let itemParagraphStyler = ListItemParagraphStyler(options: styleConfiguration.listItemOptions,
+                                                             prefixFont: styleConfiguration.fonts.listItemPrefix)
+    static let styleConfiguration = GIDStylerConfiguration()
 
-    static let paragraphStyles = StaticParagraphStyleCollection()
+    public static var colorCollection: ColorCollection { styleConfiguration.colors }
+    public static var fontCollection: FontCollection { styleConfiguration.fonts }
+    public static var paragraphStyles: ParagraphStyleCollection { styleConfiguration.paragraphStyles }
+    public static var listParagraphStyle: NSParagraphStyle { itemParagraphStyler.leadingParagraphStyle(prefixWidth: attributedPrefix.size().width) }
 
-    static let listItemOptions = ListItemOptions()
-
-    static let itemParagraphStyler = ListItemParagraphStyler(options: listItemOptions,
-                                                             prefixFont: fontCollection.listItemPrefix)
 
     static let prefixAttributes: [NSAttributedString.Key: Any] = [
         .foregroundColor : MarkdownStyles.colorCollection.listItemPrefix,
@@ -45,14 +55,14 @@ class MarkdownStyles {
 
     static var prefixLength: Int { prefixWithSpace.length }
 
-    static var listParagraphStyle: NSParagraphStyle  { itemParagraphStyler.leadingParagraphStyle(prefixWidth: attributedPrefix.size().width) }
+//    static var listParagraphStyle: NSParagraphStyle  { itemParagraphStyler.leadingParagraphStyle(prefixWidth: attributedPrefix.size().width) }
 
 
-
-    static let downConfiguration = DownStylerConfiguration(fonts: fontCollection,
-                                                           colors: colorCollection,
-                                                           paragraphStyles: paragraphStyles,
-                                                           listItemOptions: listItemOptions)
+//
+//    static let downConfiguration = DownStylerConfiguration(fonts: fontCollection,
+//                                                           colors: colorCollection,
+//                                                           paragraphStyles: paragraphStyles,
+//                                                           listItemOptions: listItemOptions)
 
 
 

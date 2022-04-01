@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		B3B1A2B6C754F1D9C83AD4C4 /* Pods_MarkdownEditor.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D706241C63C07D57DD1213E0 /* Pods_MarkdownEditor.framework */; };
+		C0242D0D27F6EF4100CB10D6 /* Configurations.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0242D0C27F6EF4100CB10D6 /* Configurations.swift */; };
 		C0AE59D427E4926F00B6D414 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AE59D327E4926F00B6D414 /* AppDelegate.swift */; };
 		C0AE59D627E4926F00B6D414 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AE59D527E4926F00B6D414 /* SceneDelegate.swift */; };
 		C0AE59DD27E4927400B6D414 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0AE59DC27E4927400B6D414 /* Assets.xcassets */; };
@@ -32,6 +33,7 @@
 /* Begin PBXFileReference section */
 		707E3AC0BDA059021CAEA402 /* Pods-MarkdownEditor.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MarkdownEditor.release.xcconfig"; path = "Target Support Files/Pods-MarkdownEditor/Pods-MarkdownEditor.release.xcconfig"; sourceTree = "<group>"; };
 		A2CC643F6D5F9059276BA1C3 /* Pods-MarkdownEditor.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MarkdownEditor.debug.xcconfig"; path = "Target Support Files/Pods-MarkdownEditor/Pods-MarkdownEditor.debug.xcconfig"; sourceTree = "<group>"; };
+		C0242D0C27F6EF4100CB10D6 /* Configurations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configurations.swift; sourceTree = "<group>"; };
 		C0AE59D027E4926F00B6D414 /* MarkdownEditor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MarkdownEditor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0AE59D327E4926F00B6D414 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C0AE59D527E4926F00B6D414 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -85,6 +87,14 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		C0242D0B27F6EF2C00CB10D6 /* Styles */ = {
+			isa = PBXGroup;
+			children = (
+				C0242D0C27F6EF4100CB10D6 /* Configurations.swift */,
+			);
+			path = Styles;
+			sourceTree = "<group>";
+		};
 		C0AE59C727E4926F00B6D414 = {
 			isa = PBXGroup;
 			children = (
@@ -116,6 +126,7 @@
 		C0AE59E727E4935900B6D414 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				C0242D0B27F6EF2C00CB10D6 /* Styles */,
 				C0AE59E927E4937E00B6D414 /* Main */,
 				C0AE59FA27E4943400B6D414 /* Tools */,
 				C0AE59FF27E4943400B6D414 /* MarkdownHealpers */,
@@ -324,6 +335,7 @@
 			files = (
 				C0AE5A0927E4943400B6D414 /* AttributedStringTool.swift in Sources */,
 				C0AE59D427E4926F00B6D414 /* AppDelegate.swift in Sources */,
+				C0242D0D27F6EF4100CB10D6 /* Configurations.swift in Sources */,
 				C0AE5A0D27E4943400B6D414 /* RichEditorTextView.swift in Sources */,
 				C0AE59D627E4926F00B6D414 /* SceneDelegate.swift in Sources */,
 				C0AE5A0F27E4973C00B6D414 /* CustomStyler.swift in Sources */,
