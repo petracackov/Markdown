@@ -9,7 +9,7 @@ import UIKit
 
 // MARK: - GIDStylerConfiguration
 
-public struct GIDStylerConfiguration {
+public struct StylerConfiguration {
 
     // MARK: - Properties
 
@@ -21,9 +21,9 @@ public struct GIDStylerConfiguration {
 
     // MARK: - Life cycle
 
-    public init(fonts: FontCollection = GIDMarkdownFontCollection(),
-                colors: ColorCollection = GIDMarkdownColorCollection(),
-                paragraphStyles: ParagraphStyleCollection = GIDMarkdownParagraphStyleCollection(),
+    public init(fonts: FontCollection = MarkdownFontCollection(),
+                colors: ColorCollection = MarkdownColorCollection(),
+                paragraphStyles: ParagraphStyleCollection = MarkdownParagraphStyleCollection(),
                 listItemOptions: ListItemOptions = ListItemOptions()
     ) {
         self.fonts = fonts
@@ -45,7 +45,7 @@ public protocol FontCollection {
 
 }
 
-public struct GIDMarkdownFontCollection: FontCollection {
+public struct MarkdownFontCollection: FontCollection {
 
     public var heading1: UIFont
     public var heading2: UIFont
@@ -53,10 +53,10 @@ public struct GIDMarkdownFontCollection: FontCollection {
     public var listItemPrefix: UIFont
     public static let fontFamilyName = "Averta"
     public init(
-        heading1: UIFont = UIFont(name: GIDMarkdownFontCollection.fontFamilyName + "-Bold", size: 28) ?? .systemFont(ofSize: 28),
-        heading2: UIFont = UIFont(name: GIDMarkdownFontCollection.fontFamilyName + "-Bold", size: 28) ?? .systemFont(ofSize: 28),
-        body: UIFont = UIFont(name: GIDMarkdownFontCollection.fontFamilyName, size: 20) ?? .systemFont(ofSize: 20),
-        listItemPrefix: UIFont = UIFont(name: GIDMarkdownFontCollection.fontFamilyName, size: 20) ?? .systemFont(ofSize: 20)
+        heading1: UIFont = UIFont(name: MarkdownFontCollection.fontFamilyName + "-Bold", size: 28) ?? .systemFont(ofSize: 28),
+        heading2: UIFont = UIFont(name: MarkdownFontCollection.fontFamilyName + "-Bold", size: 28) ?? .systemFont(ofSize: 28),
+        body: UIFont = UIFont(name: MarkdownFontCollection.fontFamilyName, size: 20) ?? .systemFont(ofSize: 20),
+        listItemPrefix: UIFont = UIFont(name: MarkdownFontCollection.fontFamilyName, size: 20) ?? .systemFont(ofSize: 20)
     ) {
         self.heading1 = heading1
         self.heading2 = heading2
@@ -78,7 +78,7 @@ public protocol ColorCollection {
 
 }
 
-public struct GIDMarkdownColorCollection: ColorCollection {
+public struct MarkdownColorCollection: ColorCollection {
 
     public var heading1: UIColor
     public var heading2: UIColor
@@ -112,7 +112,7 @@ public protocol ParagraphStyleCollection {
 
 }
 
-public struct GIDMarkdownParagraphStyleCollection: ParagraphStyleCollection {
+public struct MarkdownParagraphStyleCollection: ParagraphStyleCollection {
 
     public var heading1: NSParagraphStyle
     public var heading2: NSParagraphStyle
@@ -219,7 +219,7 @@ private extension UIFont {
     }
 
     private var widthOfLargestDigit: CGFloat {
-        return Int.decimalDigits
+        return Array(0...9)
             .map { NSAttributedString(string: "\($0)", attributes: [.font: self]).size().width }
             .max()!
     }
@@ -228,14 +228,6 @@ private extension UIFont {
         return NSAttributedString(string: ".", attributes: [.font: self])
             .size()
             .width
-    }
-
-}
-
-private extension Int {
-
-    static var decimalDigits: [Int] {
-        return Array(0...9)
     }
 
 }

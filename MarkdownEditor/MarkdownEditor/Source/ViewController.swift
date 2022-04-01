@@ -106,7 +106,7 @@ class ViewController: UIViewController {
 
     private func setupEditor() {
         let down = Down(markdownString: markdown)
-        let customStyler = GIDCustomStyler(configuration: MarkdownStyles.styleConfiguration)
+        let customStyler = CustomStyler(configuration: MarkdownStyles.styleConfiguration)
         let downString = (try? down.toAttributedString([.hardBreaks], styler: customStyler)) ?? NSAttributedString(string: "")
         editingView.delegate = self
         editingView.updateTextField(with: downString)

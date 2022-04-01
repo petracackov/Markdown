@@ -9,7 +9,7 @@ import UIKit
 import Down
 
 
-class GIDCustomStyler {
+class CustomStyler {
 
     // MARK: - Properties
 
@@ -24,7 +24,7 @@ class GIDCustomStyler {
 
     // MARK: - Life cycle
 
-    public init(configuration: GIDStylerConfiguration = GIDStylerConfiguration()) {
+    public init(configuration: StylerConfiguration = StylerConfiguration()) {
         fonts = configuration.fonts
         colors = configuration.colors
         paragraphStyles = configuration.paragraphStyles
@@ -62,7 +62,7 @@ class GIDCustomStyler {
     }
 }
 
-extension GIDCustomStyler: Styler {
+extension CustomStyler: Styler {
     func style(document str: NSMutableAttributedString) {
 
     }
