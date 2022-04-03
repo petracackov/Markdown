@@ -32,6 +32,7 @@ class TextItem: MarkdownItem {
         let spacePrefix = string.hasPrefix(" ") ? " " : ""
         let spaceSuffix = string.hasSuffix(" ") ? " " : ""
 
+
         string = string.trimmingCharacters(in: .whitespaces)
 
         if isBold {
@@ -68,6 +69,63 @@ class Paragraph: MarkdownItem {
     }
 }
 
+class ListPrefix: MarkdownItem {
+    var attributedText: NSAttributedString
+
+    init(attributedText: NSAttributedString) {
+        self.attributedText = attributedText
+    }
+
+    func toMarkdown() -> String {
+        return attributedText.string.replacingOccurrences(of: "•\t", with: "- ")
+    }
+}
+
+class ListItem: MarkdownItem {
+
+    var attributedText: NSAttributedString
+    private var items: [MarkdownItem] { toItems() }
+
+    init(attributedText: NSAttributedString) {
+        self.attributedText = attributedText
+    }
+
+    func toMarkdown() -> String {
+        return items.map { $0.toMarkdown() }.joined(separator: "")
+    }
+
+    func toItems() -> [MarkdownItem] {
+        var currentItems: [MarkdownItem] = []
+
+        let prefixString = NSMutableAttributedString(attributedString: attributedText)
+        let rangeOfPrefix = prefixString.mutableString.range(of:  "•\t")
+        if rangeOfPrefix.location != NSNotFound {
+            currentItems.append(ListPrefix(attributedText: prefixString.attributedSubstring(from: rangeOfPrefix)))
+            prefixString.replaceCharacters(in: rangeOfPrefix, with: "")
+        }
+
+        AttributedStringTool.forEachAttributeGroup(in: prefixString, in: prefixString.fullRange) { attributes, range in
+            let string = prefixString.attributedSubstring(from: range)
+            let item = MarkdownStyles.evaluateAttributesInList(attributes, in: string)
+            switch item {
+            case .heading:
+                currentItems.append(HeadingItem(attributedText: string))
+            case .text:
+                currentItems.append(TextItem(attributedText: string))
+            case .paragraph:
+                currentItems.append(Paragraph())
+            case .list:
+                if let existingList = currentItems.last as? List {
+                    existingList.addListItem(attributedText: string)
+                } else {
+                    currentItems.append(List(attributedText: string))
+                }
+            }
+        }
+        return currentItems
+    }
+}
+
 class List: MarkdownItem {
 
     var attributedText: NSAttributedString
@@ -84,32 +142,13 @@ class List: MarkdownItem {
     }
 
     func toMarkdown() -> String {
-        return items.map { $0.toMarkdown() }.joined(separator: "").replacingOccurrences(of: "•\t", with: "- ")
+        return items.map { $0.toMarkdown() }.joined(separator: "") 
     }
 
     private func toItems() -> [MarkdownItem] {
-        var currentItems: [MarkdownItem] = []
-
-        AttributedStringTool.forEachAttribute(in: attributedText, in: attributedText.fullRange) { attribute, range in
-            let string = attributedText.attributedSubstring(from: range)
-            let item = MarkdownStyles.evaluateAttributesInList(attribute)
-            switch item {
-            case .heading:
-                currentItems.append(HeadingItem(attributedText: string))
-            case .text:
-                currentItems.append(TextItem(attributedText: string))
-            case .paragraph:
-                currentItems.append(Paragraph())
-            case .list:
-                if let existingList = currentItems.last as? List {
-                    existingList.addListItem(attributedText: string)
-                } else {
-                    currentItems.append(List(attributedText: string))
-                }
-            }
-        }
-
-        return currentItems + [Paragraph()]
+        let itemsRanges = attributedText.lineRanges()
+        let items = itemsRanges.map { ListItem(attributedText: attributedText.attributedSubstring(from: $0)) }
+        return items + [Paragraph()]
     }
 }
 
@@ -130,9 +169,9 @@ class Document: MarkdownItem {
     private func toItems() -> [MarkdownItem] {
         var currentItems: [MarkdownItem] = []
 
-        AttributedStringTool.forEachAttribute(in: attributedText, in: attributedText.fullRange) { attribute, range in
+        AttributedStringTool.forEachAttributeGroup(in: attributedText, in: attributedText.fullRange) { attributes, range in
             let string = attributedText.attributedSubstring(from: range)
-            let item = MarkdownStyles.evaluateAttributes(attribute, in: string)
+            let item = MarkdownStyles.evaluateAttributes(attributes, in: string)
             switch item {
             case .heading:
                 currentItems.append(HeadingItem(attributedText: string))

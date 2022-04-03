@@ -120,12 +120,14 @@ public struct MarkdownParagraphStyleCollection: ParagraphStyleCollection {
 
     public init() {
         let headingStyle = NSMutableParagraphStyle()
-        headingStyle.paragraphSpacing = 8
+        //headingStyle.paragraphSpacing = 8
+        headingStyle.lineSpacing = 8
 
         let bodyStyle = NSMutableParagraphStyle()
 //        bodyStyle.paragraphSpacingBefore = 8
 //        bodyStyle.paragraphSpacing = 8
         bodyStyle.lineSpacing = 4
+        
 
         heading1 = headingStyle
         heading2 = headingStyle
@@ -175,6 +177,14 @@ public class ListItemParagraphStyler {
         let style = NSMutableParagraphStyle()
         style.paragraphSpacingBefore = options.spacingAbove
         style.paragraphSpacing = options.spacingBelow
+        return style
+    }
+
+    var trailingParagraphStyle: NSParagraphStyle {
+        let contentIndentation = indentation
+        let style = baseStyle
+        style.firstLineHeadIndent = contentIndentation
+        style.headIndent = contentIndentation
         return style
     }
 

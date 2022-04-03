@@ -50,20 +50,20 @@ class MarkdownStyles {
             return .heading
         } else if hasIndent(paragraphStyle: paragraphStyle) {
             return .list
-        } else if isParagraph(font: font) {
+        } else if isParagraph(attributedString: str) {
             return .paragraph
         } else {
             return .text
         }
     }
 
-    static func evaluateAttributesInList(_ attributes: [NSAttributedString.Key: Any]) -> MarkdownType {
+    static func evaluateAttributesInList(_ attributes: [NSAttributedString.Key: Any], in str: NSAttributedString) -> MarkdownType {
         let font = attributes[NSAttributedString.Key.font] as? UIFont
         let paragraphStyle = attributes[NSAttributedString.Key.paragraphStyle] as? NSParagraphStyle
         let color = attributes[NSAttributedString.Key.foregroundColor] as? UIColor
         if isHeading(font: font, paragraphStyle: paragraphStyle, color: color) {
             return .heading
-        } else if isParagraph(font: font) {
+        } else if isParagraph(attributedString: str) {
             return .paragraph
         } else {
             return .text
@@ -89,22 +89,24 @@ extension MarkdownStyles {
 
     static func isHeading(_ attributedString: NSAttributedString) -> Bool {
         var types: [MarkdownType] = []
-        AttributedStringTool.forEachAttribute(in: attributedString) { attribute, range in
+        AttributedStringTool.forEachAttributeGroup(in: attributedString) { attributes, range in
             let string = attributedString.attributedSubstring(from: range)
-            types.append(evaluateAttributes(attribute, in: string))
+            types.append(evaluateAttributes(attributes, in: string))
         }
-        return types.filter({ $0 != .paragraph }).allSatisfy { $0 == .heading } && !types.isEmpty
+        return types.allSatisfy { $0 == .heading } && !types.isEmpty
     }
 
-    static func isParagraph(font: UIFont?) -> Bool {
-        return font == nil
+    static func isParagraph(attributedString: NSAttributedString?) -> Bool {
+        guard let string = attributedString?.string, !string.isEmpty else { return false }
+        let trimmedString = string.trimmingCharacters(in: .newlines)
+        return trimmedString.isEmpty
     }
 
     static func isList(_ attributedString: NSAttributedString) -> Bool {
         var types: [MarkdownType] = []
-        AttributedStringTool.forEachAttribute(in: attributedString) { attribute, range in
+        AttributedStringTool.forEachAttributeGroup(in: attributedString) { attributes, range in
             let string = attributedString.attributedSubstring(from: range)
-            types.append(evaluateAttributes(attribute, in: string))
+            types.append(evaluateAttributes(attributes, in: string))
         }
         return types.allSatisfy { $0 == .list } && !types.isEmpty
     }

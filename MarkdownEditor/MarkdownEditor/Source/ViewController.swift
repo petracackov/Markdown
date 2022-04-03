@@ -88,11 +88,14 @@ class ViewController: UIViewController {
         return button
     }()
 
-    private lazy var markdown: String = "# Heading \n normal text"
-    private var markdown0: String { "\n- First **item** \n still first item \n- Second item" }
+    private lazy var markdown: String = "\n" + markdown5 +  markdown0 + "\n\n" + markdown4
+    private var markdown4: String { "Heading \n normal text \n normal text line 2" }
+    private var markdown0: String { "\n- First **item** \n still first item still first item still first item still first item still first item still first item still first item still first item still first item  \n- Second item" }
     private var markdown1: String { "# nooormal line \n\n kjdg \n laihg \n \n- First **item** \n still first item \n- Second item \n \n \n- Indented item \n    - Indented item \n- Fourth item \n\n normal line" }
     private var markdown2: String { "empty line \n - first line \n still **first line** \n- second line \n\nThird normal line" }
-    private var markdown3: String { "# heding\n hello \n - **hello hello hello hello \nhello hello hello hello hello**\n- **,kk _boldItaliwc_**\n\n**hello** \n _italic_ **,kk _boldItalic_** www.google.com👚" }
+    private var markdown3: String { "# heding\n hello \n - **hello hello hello hello \nhello hello hello hello hello**\n- **,kk _boldItaliwc_**\n\n**hello** \n _italic_ **,kk _boldItalic_** www.google.com" }
+    private var markdown5: String { "# heding\n hello \n - **hello hello hello hello \nhello hello hello hello hello**\n- **,kk _boldItaliwc_**\n\n**hello** \n _italic_ **,kk _boldItalic_** www.google.com👚" }
+    private var markdown6: String { "**hello** \n _italic_ **,kk _boldItalic_**" }
 
     override func viewDidLoad() {
         super.viewDidLoad()

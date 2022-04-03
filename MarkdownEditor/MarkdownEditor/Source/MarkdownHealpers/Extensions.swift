@@ -98,25 +98,25 @@ extension NSAttributedString {
 //        return ranges(for: key, in: range, where: { $0 != nil })
 //    }
 //
-//    func rangesMissingAttribute(for key: Key) -> [NSRange] {
-//        return rangesMissingAttribute(for: key, in: wholeRange)
-//    }
-//
-//    func rangesMissingAttribute(for key: Key, in range: NSRange) -> [NSRange] {
-//        return ranges(for: key, in: range, where: { $0 == nil })
-//    }
-//
-//    private func ranges(for key: Key, in range: NSRange, where predicate: (Any?) -> Bool) -> [NSRange] {
-//        var ranges = [NSRange]()
-//
-//        enumerateAttribute(key, in: range, options: []) { value, attrRange, _ in
-//            if predicate(value) {
-//                ranges.append(attrRange)
-//            }
-//        }
-//
-//        return ranges
-//    }
+    func rangesMissingAttribute(for key: Key) -> [NSRange] {
+        return rangesMissingAttribute(for: key, in: fullRange)
+    }
+
+    func rangesMissingAttribute(for key: Key, in range: NSRange) -> [NSRange] {
+        return ranges(for: key, in: range, where: { $0 == nil })
+    }
+
+    private func ranges(for key: Key, in range: NSRange, where predicate: (Any?) -> Bool) -> [NSRange] {
+        var ranges = [NSRange]()
+
+        enumerateAttribute(key, in: range, options: []) { value, attrRange, _ in
+            if predicate(value) {
+                ranges.append(attrRange)
+            }
+        }
+
+        return ranges
+    }
 
     // MARK: - Enumerate attributes
 
@@ -347,22 +347,27 @@ extension NSAttributedString {
 
     // MARK: - lines
 
-    /// If cursor is at the beginning of paragraph, and no text is selected
+    /// If cursor is at the beginning of line, and no text is selected
     /// - Parameter range: provided range.
-    /// - Returns: range of paragraph that provided range is at the beginning of. If provided range is a selection (has length greater than 0) nil is returned
-    func isBeginningOfLine(range: NSRange) -> NSRange? {
+    /// - Returns: range of line that provided range is at the beginning of. If provided range is a selection (has length greater than 0) nil is returned
+    func beginningOfLine(range: NSRange) -> NSRange? {
         guard range.length == 0 else { return nil }
-        let allParagraphRangesLocations = self.lineRanges()
-        return allParagraphRangesLocations.first { $0.location  == range.location }
+        let allLineRangesLocations = self.lineRanges()
+        return allLineRangesLocations.first { $0.location  == range.location }
     }
 
-    /// If cursor is at the beginning of paragraph, and no text is selected
+    /// If cursor is at the beginning of line, and no text is selected
     /// - Parameter range: provided range.
-    /// - Returns: range of paragraph that provided range is at the beginning of. If provided range is a selection (has length greater than 0) nil is returned
-    func isBeginningOfLine(range: NSRange, prefixLength: Int) -> NSRange? {
+    /// - Returns: range of line that provided range is at the beginning of. If provided range is a selection (has length greater than 0) nil is returned
+    private func beginningOfLine(range: NSRange, prefixLength: Int) -> NSRange? {
         guard range.length < prefixLength else { return nil }
-        let allParagraphRangesLocations = self.lineRanges()
-        return allParagraphRangesLocations.first { ($0.location + prefixLength)  == range.location + range.length }
+        let allLineRangesLocations = self.lineRanges()
+        return allLineRangesLocations.first { ($0.location + prefixLength)  == range.location + range.length }
+    }
+
+    /// If cursor is at the beginning of line, and no text is selected
+    func isBeginningOfLine(range: NSRange) -> Bool {
+        return beginningOfLine(range: range) != nil
     }
 
     func endOfString(range: NSRange) -> NSRange? {
@@ -377,14 +382,14 @@ extension NSAttributedString {
     }
 
     func linesOfRange(range: NSRange) -> [NSRange] {
-        let allParagraphRanges = self.lineRanges()
-        var paragraphs = allParagraphRanges.filter { (range.location < $0.location + $0.length) && (range.location + range.length > $0.location) }
-        if let paragraph = isBeginningOfLine(range: range) {
-            paragraphs.append(paragraph)
-        } else if let paragraph = endOfString(range: range) {
-            paragraphs.append(paragraph)
+        let allLineRanges = self.lineRanges()
+        var lines = allLineRanges.filter { (range.location < $0.location + $0.length) && (range.location + range.length > $0.location) }
+        if let line = beginningOfLine(range: range) {
+            lines.append(line)
+        } else if let endLine = endOfString(range: range) {
+            lines.append(endLine)
         }
-        return paragraphs.sorted { $0.location < $1.location }
+        return lines.sorted { $0.location < $1.location }
     }
 
     func lineRanges() -> [NSRange] {
@@ -403,3 +408,5 @@ extension NSAttributedString {
         return result
     }
 }
+
+

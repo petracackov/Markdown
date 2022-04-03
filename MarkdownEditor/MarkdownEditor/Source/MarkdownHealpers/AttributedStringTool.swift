@@ -29,10 +29,25 @@ class AttributedStringTool: UIView {
         return detectedRanges
     }
 
-    static func addTrait(_ trait: UIFontDescriptor.SymbolicTraits, to attributedString: NSMutableAttributedString, in range: NSRange) {
+    static func addTrait(_ trait: UIFontDescriptor.SymbolicTraits, to attributedString: NSMutableAttributedString, in range: NSRange, defaultFont: UIFont) {
+        addMissingFontTo(attributedString, font: defaultFont)
         forEachAttribute(in: attributedString, withKey: .font, in: range) { (font: UIFont, range) in
             let newFont = fontByAddingTrait(trait, to: font)
             attributedString.addAttribute(.font, value: newFont, range: range)
+        }
+    }
+
+    static func addMissingFontTo(_ attributedString: NSMutableAttributedString, font: UIFont) {
+        let rangesWithoutFont = attributedString.rangesMissingAttribute(for: .font)
+        rangesWithoutFont.forEach {
+            attributedString.addAttribute(.font, value: font, range: $0)
+        }
+    }
+
+    static func addMissingParagraphTo(_ attributedString: NSMutableAttributedString, paragraph: NSParagraphStyle) {
+        let rangesWithoutFont = attributedString.rangesMissingAttribute(for: .paragraphStyle)
+        rangesWithoutFont.forEach {
+            attributedString.addAttribute(.paragraphStyle, value: paragraph, range: $0)
         }
     }
 
@@ -43,11 +58,11 @@ class AttributedStringTool: UIView {
         }
     }
 
-    static func toggleTrait(_ trait: UIFontDescriptor.SymbolicTraits, to attributedString: NSMutableAttributedString, in range: NSRange) {
+    static func toggleTrait(_ trait: UIFontDescriptor.SymbolicTraits, to attributedString: NSMutableAttributedString, in range: NSRange, defaultFont: UIFont) {
         if allFontsContainTrait(trait, attributedString: attributedString, in: range) {
             removeTrait(trait, from: attributedString, in: range)
         } else {
-            addTrait(trait, to: attributedString, in: range)
+            addTrait(trait, to: attributedString, in: range, defaultFont: defaultFont)
         }
     }
 
@@ -91,10 +106,10 @@ class AttributedStringTool: UIView {
         }
     }
 
-    static func forEachAttribute(in attributedString: NSAttributedString, in range: NSRange? = nil, action: (_ attribute: [NSAttributedString.Key : Any], _ range: NSRange) -> Void) {
+    static func forEachAttributeGroup(in attributedString: NSAttributedString, in range: NSRange? = nil, action: (_ attributes: [NSAttributedString.Key : Any], _ range: NSRange) -> Void) {
         let range = range ?? attributedString.fullRange
-        attributedString.enumerateAttributes(in: range) { attribute, range, _ in
-            action(attribute, range)
+        attributedString.enumerateAttributes(in: range) { attributes, range, _ in
+            action(attributes, range)
         }
     }
 

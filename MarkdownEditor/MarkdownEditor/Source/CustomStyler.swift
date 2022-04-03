@@ -55,14 +55,89 @@ class CustomStyler {
         let attributedPrefix = str.prefix(with: prefixLength)
         let prefixWidth = attributedPrefix.size().width
 
+        let numberOfLines = str.linesOfRange(range: range)
+        guard numberOfLines.count > 0, let firstLine = numberOfLines.first else { return }
+
         let defaultStyle = itemParagraphStyler.leadingParagraphStyle(prefixWidth: prefixWidth)
-        AttributedStringTool.forEachAttribute(in: str) { _, range in
+        AttributedStringTool.forEachAttributeGroup(in: str, in: firstLine) { _, range in
             str.addAttribute(.paragraphStyle, value: defaultStyle, range: range)
         }
+        guard numberOfLines.count > 1 else { return }
+        // In list paragraph we want to preserve the new lines that are part of that list item.
+        // The text acts as all new line.
+        // "\u{B}" -> Vertical tabulation, "\u{A}" -> line feed ("\n")
+        let newString = str.mutableString.replacingOccurrences(of: "\u{A}", with: "\u{B}", options: .literal , range: str.fullRange)
+        str.replaceCharacters(in: str.fullRange, with: newString)
+        AttributedStringTool.forEachAttributeGroup(in: str, in: numberOfLines[1]) { _, range in
+            str.addAttribute(.paragraphStyle, value: itemParagraphStyler.trailingParagraphStyle, range: range)
+        }
+
+
     }
 }
 
 extension CustomStyler: Styler {
+
+    func style(listItemPrefix str: NSMutableAttributedString) {
+        str.setAttributes(listPrefixAttributes)
+    }
+
+    func style(item str: NSMutableAttributedString, prefixLength: Int) {
+        let prefixLength = MarkdownStyles.attributedPrefix.length
+        indentListItemLeadingParagraph(in: str, prefixLength: prefixLength, in: str.fullRange)
+    }
+
+    func style(heading str: NSMutableAttributedString, level: Int) {
+        let (font, color, paragraphStyle) = headingAttributes(for: level)
+        str.addAttributes([
+            .foregroundColor: color,
+            .paragraphStyle: paragraphStyle,
+            .font: font])
+    }
+
+    func style(text str: NSMutableAttributedString) {
+        str.setAttributes([
+            .font: fonts.body,
+            .foregroundColor: colors.body,
+            .paragraphStyle: paragraphStyles.body])
+    }
+
+    func style(softBreak str: NSMutableAttributedString) {
+        // "\u{A}" -> line feed ("\n")
+        str.replaceCharacters(in: str.fullRange, with: "\u{A}")
+    }
+
+    func style(emphasis str: NSMutableAttributedString) {
+        AttributedStringTool.addTrait(.traitItalic, to: str, in: str.fullRange, defaultFont: fonts.body)
+    }
+
+    func style(strong str: NSMutableAttributedString) {
+        AttributedStringTool.addTrait(.traitBold, to: str, in: str.fullRange, defaultFont: fonts.body)
+    }
+
+    func style(link str: NSMutableAttributedString, title: String?, url: String?) {
+        guard let url = url else { return }
+        styleGenericLink(in: str, url: url)
+    }
+
+    func style(image str: NSMutableAttributedString, title: String?, url: String?) {
+        guard let url = url else { return }
+        styleGenericLink(in: str, url: url)
+    }
+
+    func style(paragraph str: NSMutableAttributedString) {
+        let missingFontRanges = str.rangesMissingAttribute(for: .font)
+        missingFontRanges.forEach { range in
+            guard range.location > 0 else { return }
+            let previousAttributes = str.attributes(at: range.location-1, effectiveRange: nil)
+            str.addAttributes(previousAttributes, range: range)
+        }
+    }
+
+    func style(lineBreak str: NSMutableAttributedString) {
+        print("lineBreak")
+    }
+
     func style(document str: NSMutableAttributedString) {
 
     }
@@ -75,13 +150,20 @@ extension CustomStyler: Styler {
 
     }
 
-    func style(listItemPrefix str: NSMutableAttributedString) {
-        str.setAttributes(listPrefixAttributes)
+    func style(code str: NSMutableAttributedString) {
+
     }
 
-    func style(item str: NSMutableAttributedString, prefixLength: Int) {
-        let prefixLength = MarkdownStyles.attributedPrefix.length
-        indentListItemLeadingParagraph(in: str, prefixLength: prefixLength, in: str.fullRange)
+    func style(htmlInline str: NSMutableAttributedString) {
+
+    }
+
+    func style(customInline str: NSMutableAttributedString) {
+
+    }
+
+    func style(thematicBreak str: NSMutableAttributedString) {
+        print("thematicBreak")
     }
 
     func style(codeBlock str: NSMutableAttributedString, fenceInfo: String?) {
@@ -94,84 +176,6 @@ extension CustomStyler: Styler {
 
     func style(customBlock str: NSMutableAttributedString) {
 
-    }
-
-    func style(paragraph str: NSMutableAttributedString) {
-        //str.addAttribute(for: .paragraphStyle, value: paragraphStyles.body)
-    }
-
-    func style(heading str: NSMutableAttributedString, level: Int) {
-        let (font, color, paragraphStyle) = headingAttributes(for: level)
-
-        str.updateExistingAttributes(for: .font) { (currentFont: UIFont) in
-            var newFont = font
-
-            if currentFont.isEmphasized {
-                newFont = newFont.emphasis
-            }
-
-            if currentFont.isStrong {
-                newFont = newFont.strong
-            }
-
-            return newFont
-        }
-
-        str.addAttributes([
-            .foregroundColor: color,
-            .paragraphStyle: paragraphStyle])
-    }
-
-    func style(thematicBreak str: NSMutableAttributedString) {
-
-    }
-
-    func style(text str: NSMutableAttributedString) {
-        str.setAttributes([
-            .font: fonts.body,
-            .foregroundColor: colors.body,
-            .paragraphStyle: paragraphStyles.body])
-    }
-
-    func style(softBreak str: NSMutableAttributedString) {
-
-    }
-
-    func style(lineBreak str: NSMutableAttributedString) {
-
-    }
-
-    func style(code str: NSMutableAttributedString) {
-
-    }
-
-    func style(htmlInline str: NSMutableAttributedString) {
-    }
-
-    func style(customInline str: NSMutableAttributedString) {
-
-    }
-
-    func style(emphasis str: NSMutableAttributedString) {
-        str.updateExistingAttributes(for: .font) { (font: UIFont) in
-            font.emphasis
-        }
-    }
-
-    func style(strong str: NSMutableAttributedString) {
-        str.updateExistingAttributes(for: .font) { (font: UIFont) in
-            font.strong
-        }
-    }
-
-    func style(link str: NSMutableAttributedString, title: String?, url: String?) {
-        guard let url = url else { return }
-        styleGenericLink(in: str, url: url)
-    }
-
-    func style(image str: NSMutableAttributedString, title: String?, url: String?) {
-        guard let url = url else { return }
-        styleGenericLink(in: str, url: url)
     }
 
 }
