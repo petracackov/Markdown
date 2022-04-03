@@ -6,41 +6,15 @@
 //
 
 import UIKit
-import Down
 
 class MarkdownStyles {
 
-
-    static let itemParagraphStyler = ListItemParagraphStyler(options: styleConfiguration.listItemOptions,
-                                                             prefixFont: styleConfiguration.fonts.listItemPrefix)
     static let styleConfiguration = StylerConfiguration()
 
-    public static var colorCollection: ColorCollection { styleConfiguration.colors }
-    public static var fontCollection: FontCollection { styleConfiguration.fonts }
-    public static var paragraphStyles: ParagraphStyleCollection { styleConfiguration.paragraphStyles }
-    public static var listParagraphStyle: NSParagraphStyle { itemParagraphStyler.leadingParagraphStyle(prefixWidth: attributedPrefix.size().width) }
-
-
-    static let prefixAttributes: [NSAttributedString.Key: Any] = [
-        .foregroundColor : MarkdownStyles.colorCollection.listItemPrefix,
-        .font : MarkdownStyles.fontCollection.listItemPrefix
-    ]
-
-    static let prefix = "•"
-    static var attributedPrefix: NSAttributedString {
-        let mutablePrefix = NSMutableAttributedString(string: prefix)
-        mutablePrefix.addAttributes(prefixAttributes)
-        return mutablePrefix
-    }
-
-    static var prefixWithSpace: NSAttributedString {
-        let mutablePrefix = NSMutableAttributedString(string: prefix + "\t")
-        mutablePrefix.addAttributes(prefixAttributes)
-        return mutablePrefix
-    }
-
-    static var prefixLength: Int { prefixWithSpace.length }
-
+    private static let itemParagraphStyler = ListItemParagraphStyler(configuration: styleConfiguration)
+    private static var colorCollection: ColorCollection { styleConfiguration.colors }
+    private static var fontCollection: FontCollection { styleConfiguration.fonts }
+    private static var paragraphStyles: ParagraphStyleCollection { styleConfiguration.paragraphStyles }
 
     static func evaluateAttributes(_ attributes: [NSAttributedString.Key: Any], in str: NSAttributedString) -> MarkdownType {
         let font = attributes[NSAttributedString.Key.font] as? UIFont
@@ -70,21 +44,14 @@ class MarkdownStyles {
         }
     }
 
-    enum MarkdownType {
-        case heading
-        case text
-        case paragraph
-        case list
-    }
-
-}
-
-extension MarkdownStyles {
-
-    static func isHeading(font: UIFont?, paragraphStyle: NSParagraphStyle?, color: UIColor?) -> Bool {
+    private static func isHeading(font: UIFont?, paragraphStyle: NSParagraphStyle?, color: UIColor?) -> Bool {
         return font == fontCollection.heading1 &&
         paragraphStyle == paragraphStyles.heading1 &&
         color == colorCollection.heading1
+    }
+
+    private static func hasIndent(paragraphStyle: NSParagraphStyle?)  -> Bool {
+        return paragraphStyle?.headIndent ==  itemParagraphStyler.indentation
     }
 
     static func isHeading(_ attributedString: NSAttributedString) -> Bool {
@@ -111,8 +78,14 @@ extension MarkdownStyles {
         return types.allSatisfy { $0 == .list } && !types.isEmpty
     }
 
-    static func hasIndent(paragraphStyle: NSParagraphStyle?)  -> Bool {
-        return paragraphStyle?.headIndent ==  itemParagraphStyler.indentation
+}
+
+extension MarkdownStyles {
+    enum MarkdownType {
+        case heading
+        case text
+        case paragraph
+        case list
     }
 }
 

@@ -28,8 +28,7 @@ class CustomStyler {
         fonts = configuration.fonts
         colors = configuration.colors
         paragraphStyles = configuration.paragraphStyles
-        itemParagraphStyler = ListItemParagraphStyler(options: configuration.listItemOptions,
-                                                      prefixFont: fonts.listItemPrefix)
+        itemParagraphStyler = ListItemParagraphStyler(configuration: configuration)
     }
 
     // MARK: - Common Styling
@@ -52,13 +51,10 @@ class CustomStyler {
                                                 prefixLength: Int,
                                                 in range: NSRange) {
 
-        let attributedPrefix = str.prefix(with: prefixLength)
-        let prefixWidth = attributedPrefix.size().width
-
         let numberOfLines = str.linesOfRange(range: range)
         guard numberOfLines.count > 0, let firstLine = numberOfLines.first else { return }
 
-        let defaultStyle = itemParagraphStyler.leadingParagraphStyle(prefixWidth: prefixWidth)
+        let defaultStyle = itemParagraphStyler.listParagraphStyle
         AttributedStringTool.forEachAttributeGroup(in: str, in: firstLine) { _, range in
             str.addAttribute(.paragraphStyle, value: defaultStyle, range: range)
         }
@@ -83,7 +79,7 @@ extension CustomStyler: Styler {
     }
 
     func style(item str: NSMutableAttributedString, prefixLength: Int) {
-        let prefixLength = MarkdownStyles.attributedPrefix.length
+        let prefixLength = itemParagraphStyler.attributedPrefix.length
         indentListItemLeadingParagraph(in: str, prefixLength: prefixLength, in: str.fullRange)
     }
 

@@ -7,7 +7,7 @@
 
 import UIKit
 
-// MARK: - GIDStylerConfiguration
+// MARK: - StylerConfiguration
 
 public struct StylerConfiguration {
 
@@ -16,7 +16,6 @@ public struct StylerConfiguration {
     public var fonts: FontCollection
     public var colors: ColorCollection
     public var paragraphStyles: ParagraphStyleCollection
-
     public var listItemOptions: ListItemOptions
 
     // MARK: - Life cycle
@@ -171,6 +170,8 @@ public class ListItemParagraphStyler {
     }
 
     private let options: ListItemOptions
+    private let prefixColor: UIColor
+    private let prefixFont: UIFont
     private let largestPrefixWidth: CGFloat
 
     private var baseStyle: NSMutableParagraphStyle {
@@ -188,11 +189,44 @@ public class ListItemParagraphStyler {
         return style
     }
 
+    var listParagraphStyle: NSParagraphStyle {
+        leadingParagraphStyle(prefixWidth: attributedPrefix.size().width)
+    }
+
+    // MARK: Default list prefix
+
+    private let prefix = "•"
+
+    private lazy var prefixAttributes: [NSAttributedString.Key: Any] = [
+        .foregroundColor: prefixColor,
+        .font: prefixFont
+    ]
+
+    var prefixWithSpace: NSAttributedString {
+        let mutablePrefix = NSMutableAttributedString(string: prefix + "\t")
+        mutablePrefix.addAttributes(prefixAttributes)
+        return mutablePrefix
+    }
+
+    var attributedPrefix: NSAttributedString {
+        let mutablePrefix = NSMutableAttributedString(string: prefix)
+        mutablePrefix.addAttributes(prefixAttributes)
+        return mutablePrefix
+    }
+
     // MARK: - Life cycle
 
-    public init(options: ListItemOptions, prefixFont: UIFont) {
+    public init(options: ListItemOptions, prefixFont: UIFont, prefixColor: UIColor) {
         self.options = options
+        self.prefixColor = prefixColor
+        self.prefixFont = prefixFont
         self.largestPrefixWidth = prefixFont.widthOfNumberedPrefix(digits: options.maxPrefixDigits)
+    }
+
+    convenience init(configuration: StylerConfiguration) {
+        self.init(options: configuration.listItemOptions,
+                  prefixFont: configuration.fonts.listItemPrefix,
+                  prefixColor: configuration.colors.listItemPrefix)
     }
 
     // MARK: - Methods
@@ -201,7 +235,7 @@ public class ListItemParagraphStyler {
     ///
     /// - Parameter prefixWidth: the width (in points) of the list item prefix.
 
-    public func leadingParagraphStyle(prefixWidth: CGFloat) -> NSParagraphStyle {
+    private func leadingParagraphStyle(prefixWidth: CGFloat) -> NSParagraphStyle {
         let contentIndentation = indentation
         let prefixIndentation: CGFloat = contentIndentation - options.spacingAfterPrefix - prefixWidth
         let prefixSpill = max(0, prefixWidth - largestPrefixWidth)

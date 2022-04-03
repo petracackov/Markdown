@@ -34,8 +34,8 @@ class RichEditorTextView: UIView {
         textView.keyboardDismissMode = .interactive
         textView.dataDetectorTypes = [.link]
         textView.backgroundColor = .white
-        textView.font = MarkdownStyles.fontCollection.body
-        textView.textColor = MarkdownStyles.colorCollection.body
+        textView.font = styleConfiguration.fonts.body
+        textView.textColor = styleConfiguration.colors.body
 
         textView.onPasteAction = { [weak self] in
             guard let self = self else { return }
@@ -57,20 +57,24 @@ class RichEditorTextView: UIView {
 
     var delegate: RichEditorTextViewDelegate?
 
-    private let baseAttributes: [NSAttributedString.Key: Any] = [
-        .foregroundColor : MarkdownStyles.colorCollection.body,
-        .font : MarkdownStyles.fontCollection.body,
-        .paragraphStyle : MarkdownStyles.paragraphStyles.body
+    // Default configurations - can be changed
+    var styleConfiguration = MarkdownStyles.styleConfiguration
+    private lazy var itemParagraphStyler = ListItemParagraphStyler(configuration: styleConfiguration)
+
+    private lazy var baseAttributes: [NSAttributedString.Key: Any] = [
+        .foregroundColor : styleConfiguration.colors.body,
+        .font : styleConfiguration.fonts.body,
+        .paragraphStyle : styleConfiguration.paragraphStyles.body
     ]
 
-    private let headingAttributes: [NSAttributedString.Key: Any] = [
-        .foregroundColor : MarkdownStyles.colorCollection.heading1,
-        .font : MarkdownStyles.fontCollection.heading1,
-        .paragraphStyle : MarkdownStyles.paragraphStyles.heading1
+    private lazy var headingAttributes: [NSAttributedString.Key: Any] = [
+        .foregroundColor : styleConfiguration.colors.heading1,
+        .font : styleConfiguration.fonts.heading1,
+        .paragraphStyle : styleConfiguration.paragraphStyles.heading1
     ]
 
-    private let listAttributes: [NSAttributedString.Key: Any] = [
-        .paragraphStyle : MarkdownStyles.listParagraphStyle
+    private lazy var listAttributes: [NSAttributedString.Key: Any] = [
+        .paragraphStyle : itemParagraphStyler.listParagraphStyle
     ]
 
 //    private var linkHighlightingAttributes: AttributedStringTools.AsAttributes {
@@ -179,7 +183,7 @@ extension RichEditorTextView {
         guard headingIsActive == false else { return }
         boldIsActive.toggle()
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
-        AttributedStringTool.toggleTrait(.traitBold, to: mutableString, in: currentSelectedRange, defaultFont: MarkdownStyles.fontCollection.body)
+        AttributedStringTool.toggleTrait(.traitBold, to: mutableString, in: currentSelectedRange, defaultFont: styleConfiguration.fonts.body)
         updateTextField(with: mutableString)
     }
 
@@ -188,7 +192,7 @@ extension RichEditorTextView {
         guard headingIsActive == false else { return }
         italicIsActive.toggle()
         let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
-        AttributedStringTool.toggleTrait(.traitItalic, to: mutableString, in: currentSelectedRange, defaultFont: MarkdownStyles.fontCollection.body)
+        AttributedStringTool.toggleTrait(.traitItalic, to: mutableString, in: currentSelectedRange, defaultFont: styleConfiguration.fonts.body)
         updateTextField(with: mutableString)
     }
 
@@ -246,7 +250,7 @@ extension RichEditorTextView {
 
         let mutableString = NSMutableAttributedString(attributedString:  string)
 
-        let paragraphStyle = selected ? MarkdownStyles.listParagraphStyle : MarkdownStyles.paragraphStyles.body
+        let paragraphStyle = selected ? itemParagraphStyler.listParagraphStyle : styleConfiguration.paragraphStyles.body
 
         // To prevent wrong strings in specific range, ranges must be sorted from the greatest location to the smallest. The string will be modified in for loop from the bigger range location to the smallest. That is because that the changes on the specific range do not change the string in the smaller range
         var selectedLines  = string.linesOfRange(range: range).sorted { $0.location > $1.location }
@@ -262,6 +266,7 @@ extension RichEditorTextView {
 
             // String representing a paragraph
             var lineString = NSMutableAttributedString(attributedString: mutableString.attributedSubstring(from: lineRange))
+            let prefixLength = itemParagraphStyler.prefixWithSpace.length
 
             // Remove all heading styles that are in the selected range
             if MarkdownStyles.isHeading(lineString), cleanString {
@@ -270,36 +275,36 @@ extension RichEditorTextView {
 
             // append prefix to the current line string if it does not yet exist
             if selected, !stringHasPrefix(lineString) {
-                let prefixWithLineString = NSMutableAttributedString(attributedString: MarkdownStyles.prefixWithSpace)
+                let prefixWithLineString = NSMutableAttributedString(attributedString: itemParagraphStyler.prefixWithSpace)
                 prefixWithLineString.append(lineString)
                 lineString = prefixWithLineString
 
                 // Adjust current selection/cursor position to match added prefix
                 if lineRange.location <= updatedRange.location {
                     // prefix was added on the left of selection
-                    updatedRange.location += MarkdownStyles.prefixLength
+                    updatedRange.location += prefixLength
                 } else if updatedRange.length > 0 {
                     // prefix fas added somewhere in the middle of selection
-                    updatedRange.length += MarkdownStyles.prefixLength
+                    updatedRange.length += prefixLength
                 }
             // remove prefix from the current line if it exists
             } else if !selected, stringHasPrefix(lineString) {
 
-                if lineString.length <= MarkdownStyles.prefixLength  {
+                if lineString.length <= prefixLength  {
                     // if paragraph string only has prefix replace it with new line/ paragraph string
-                    lineString.replaceCharacters(in: NSRange(location: 0, length: MarkdownStyles.prefixWithSpace.length), with: "\n")
+                    lineString.replaceCharacters(in: NSRange(location: 0, length: prefixLength), with: "\n")
                 } else {
                     // replace just the prefix with empty string -> remove prefix
-                    lineString.replaceCharacters(in: NSRange(location: 0, length: MarkdownStyles.prefixWithSpace.length), with: "")
+                    lineString.replaceCharacters(in: NSRange(location: 0, length: prefixLength), with: "")
                 }
 
                 // Adjust current selection/cursor position to match added prefix
                 if lineRange.location < updatedRange.location {
                     // prefix was removed on the left of selection
-                    updatedRange.location -= MarkdownStyles.prefixLength
+                    updatedRange.location -= prefixLength
                 } else if updatedRange.length > 0 {
                     // prefix fas removed somewhere in the middle of selection
-                    updatedRange.length -= MarkdownStyles.prefixLength
+                    updatedRange.length -= prefixLength
                 }
 
             }
@@ -320,10 +325,10 @@ extension RichEditorTextView {
     private func updateStringWithLinkAttributes(_ string: NSAttributedString) -> NSAttributedString {
 
         let mutableText = NSMutableAttributedString(attributedString: string)
-        mutableText.addAttribute(for: .foregroundColor, value: MarkdownStyles.colorCollection.body)
+        mutableText.addAttribute(for: .foregroundColor, value: styleConfiguration.colors.body)
 
         let linkRanges = AttributedStringTool.detectedURLRanges(in: string)
-        linkRanges.forEach { mutableText.addAttribute(.foregroundColor, value: MarkdownStyles.colorCollection.link, range: $0) }
+        linkRanges.forEach { mutableText.addAttribute(.foregroundColor, value: styleConfiguration.colors.link, range: $0) }
 
         return mutableText
     }
@@ -363,17 +368,17 @@ private extension RichEditorTextView {
             if MarkdownStyles.isList(lineString), stringHasPrefix(lineString) {
                 let lowerBoundDifference = abs(range.location - lineRange.location)
                 let upperBoundDifference = abs(range.location + range.length - lineRange.location)
-
+                let prefixLength = itemParagraphStyler.prefixWithSpace.length
                 // if the cursor is somewhere where the prefix is move it after prefix
-                if lowerBoundDifference < MarkdownStyles.prefixLength {
-                    textView.selectedRange.location += MarkdownStyles.prefixLength - lowerBoundDifference
+                if lowerBoundDifference < prefixLength {
+                    textView.selectedRange.location += prefixLength - lowerBoundDifference
                     // if cursor has selected text also adjust selection length (make it so it does not select more text)
                     if range.length > 0 {
-                        textView.selectedRange.length -= MarkdownStyles.prefixLength - lowerBoundDifference
+                        textView.selectedRange.length -= prefixLength - lowerBoundDifference
                     }
                 // if the selected text, the end of selection is where the prefix is adjust the selection so it ends outside of prefix
-                } else if upperBoundDifference <  MarkdownStyles.prefixLength {
-                    textView.selectedRange.length -= MarkdownStyles.prefixLength - upperBoundDifference
+                } else if upperBoundDifference <  prefixLength {
+                    textView.selectedRange.length -= prefixLength - upperBoundDifference
                 }
             }
         }
@@ -392,12 +397,12 @@ private extension RichEditorTextView {
 
         if boldIsActive {
             // if bold is active add bold trait to the new string
-            AttributedStringTool.addTrait(.traitBold, to: newAttributedString, in: newAttributedString.fullRange, defaultFont: MarkdownStyles.fontCollection.body)
+            AttributedStringTool.addTrait(.traitBold, to: newAttributedString, in: newAttributedString.fullRange, defaultFont: styleConfiguration.fonts.body)
         }
 
         if italicIsActive {
             // if italic is active add italic trait to the new string
-            AttributedStringTool.addTrait(.traitItalic, to: newAttributedString, in: newAttributedString.fullRange, defaultFont: MarkdownStyles.fontCollection.body)
+            AttributedStringTool.addTrait(.traitItalic, to: newAttributedString, in: newAttributedString.fullRange, defaultFont: styleConfiguration.fonts.body)
         }
 
         if headingIsActive {
@@ -409,7 +414,8 @@ private extension RichEditorTextView {
             // if paragraph is active (cursor is currently somewhere in the paragraph style)
             // and if string represents new line
             if string == "\n" {
-                let previousRange = NSRange(location: range.location - MarkdownStyles.prefixLength, length: MarkdownStyles.prefixLength)
+                let prefixLength = itemParagraphStyler.prefixWithSpace.length
+                let previousRange = NSRange(location: range.location - prefixLength, length: prefixLength)
                 let previousString = wholeText.attributedSubstring(from: previousRange)
                 // and if range before current selected range has prefix remove the list styling
                 // (and return from function since cursor and selection is handled in the list logic.
@@ -418,7 +424,7 @@ private extension RichEditorTextView {
                     return
                 // otherwise append prefix to new string
                 } else {
-                    newAttributedString.append(MarkdownStyles.prefixWithSpace)
+                    newAttributedString.append(itemParagraphStyler.prefixWithSpace)
                 }
             //  if deletion is triggered and cursor is in front of prefix then remove list styling and return from function
             } else if newAttributedString.length == 0, currentSelectedRange.length == 0, isBeginningListOfLine(attributedString: attributedString, range: range) {
@@ -453,14 +459,14 @@ private extension RichEditorTextView {
 private extension RichEditorTextView {
 
     private func stringHasPrefix(_ string: NSAttributedString) -> Bool {
-        let prefixLength = MarkdownStyles.prefixWithSpace.length
-        return string.prefix(length: prefixLength).string == MarkdownStyles.prefixWithSpace.string
+        let prefixLength = itemParagraphStyler.prefixWithSpace.length
+        return string.prefix(length: prefixLength).string == itemParagraphStyler.prefixWithSpace.string
     }
 
     /// If cursor is at the beginning of line with the prefix, and no text is selected
     /// - Parameter range: provided range.
     private func isBeginningListOfLine(attributedString: NSAttributedString, range: NSRange) -> Bool {
-        let prefixLength = MarkdownStyles.prefixWithSpace.length
+        let prefixLength = itemParagraphStyler.prefixWithSpace.length
         guard range.length < prefixLength else { return false }
         let allLineRangesLocations = attributedString.lineRanges()
         return allLineRangesLocations.first { ($0.location + prefixLength) == range.location + range.length } != nil
