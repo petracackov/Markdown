@@ -180,18 +180,18 @@ extension RichEditorTextView {
 
     /// Toggles bold attribute in the current selected range of the attributedString in textView
     func toggleBold() {
-        guard headingIsActive == false else { return }
+        guard headingIsActive == false, let attributedString = attributedString else { return }
         boldIsActive.toggle()
-        let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
+        let mutableString = NSMutableAttributedString(attributedString:  attributedString)
         AttributedStringTool.toggleTrait(.traitBold, to: mutableString, in: currentSelectedRange, defaultFont: styleConfiguration.fonts.body)
         updateTextField(with: mutableString)
     }
 
     /// Toggles italic attribute in the current selected range of the attributedString in textView
     func toggleItalic() {
-        guard headingIsActive == false else { return }
+        guard headingIsActive == false, let attributedString = attributedString else { return }
         italicIsActive.toggle()
-        let mutableString = NSMutableAttributedString(attributedString:  textView.attributedText)
+        let mutableString = NSMutableAttributedString(attributedString:  attributedString)
         AttributedStringTool.toggleTrait(.traitItalic, to: mutableString, in: currentSelectedRange, defaultFont: styleConfiguration.fonts.body)
         updateTextField(with: mutableString)
     }
@@ -311,7 +311,6 @@ extension RichEditorTextView {
 
             // add correct paragraph style -> add indent to the new string
             lineString.addAttribute(for: .paragraphStyle, value: paragraphStyle)
-
 
             // replace the old string with the new one -> should not mess with other paragraphStrings ranges since ranges are adjusted from bigger to smaller
             mutableString.replaceCharacters(in: lineRange, with: lineString)
