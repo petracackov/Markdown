@@ -9,42 +9,109 @@ import UIKit
 
 // MARK: - StylerConfiguration
 
-public struct StylerConfiguration {
+struct StylerConfiguration {
+
+    // MARK: Default configuration
+
+    static let `default`: StylerConfiguration = StylerConfiguration()
 
     // MARK: - Properties
 
-    public var fonts: FontCollection
-    public var colors: ColorCollection
-    public var paragraphStyles: ParagraphStyleCollection
-    public var listItemOptions: ListItemOptions
+    let fonts: MarkdownFontCollection
+    let colors: MarkdownColorCollection
+    let paragraphStyles: MarkdownParagraphStyleCollection
+    let listItemOptions: ListItemOptions
+    let itemParagraphStyler: ListItemParagraphStyler
 
     // MARK: - Life cycle
 
-    public init(fonts: FontCollection = MarkdownFontCollection(),
-                colors: ColorCollection = MarkdownColorCollection(),
-                paragraphStyles: ParagraphStyleCollection = MarkdownParagraphStyleCollection(),
-                listItemOptions: ListItemOptions = ListItemOptions()
-    ) {
+    public init(fonts: MarkdownFontCollection = MarkdownFontCollection(),
+                colors: MarkdownColorCollection = MarkdownColorCollection(),
+                paragraphStyles: MarkdownParagraphStyleCollection = MarkdownParagraphStyleCollection(),
+                listItemOptions: ListItemOptions = ListItemOptions()) {
         self.fonts = fonts
         self.colors = colors
         self.paragraphStyles = paragraphStyles
         self.listItemOptions = listItemOptions
+        self.itemParagraphStyler = ListItemParagraphStyler(options: listItemOptions,
+                                                                                  prefixFont: fonts.listItemPrefix,
+                                                                                  prefixColor: colors.listItemPrefix)
+    }
+
+    func evaluateAttributes(_ attributes: [NSAttributedString.Key: Any], in str: NSAttributedString) -> MarkdownType {
+        let font = attributes[NSAttributedString.Key.font] as? UIFont
+        let paragraphStyle = attributes[NSAttributedString.Key.paragraphStyle] as? NSParagraphStyle
+        let color = attributes[NSAttributedString.Key.foregroundColor] as? UIColor
+        if isHeading(font: font, paragraphStyle: paragraphStyle, color: color) {
+            return .heading
+        } else if hasIndent(paragraphStyle: paragraphStyle) {
+            return .list
+        } else if isParagraph(attributedString: str) {
+            return .paragraph
+        } else {
+            return .text
+        }
+    }
+
+    func evaluateAttributesInList(_ attributes: [NSAttributedString.Key: Any], in str: NSAttributedString) -> MarkdownType {
+        let font = attributes[NSAttributedString.Key.font] as? UIFont
+        let paragraphStyle = attributes[NSAttributedString.Key.paragraphStyle] as? NSParagraphStyle
+        let color = attributes[NSAttributedString.Key.foregroundColor] as? UIColor
+        if isHeading(font: font, paragraphStyle: paragraphStyle, color: color) {
+            return .heading
+        } else if isParagraph(attributedString: str) {
+            return .paragraph
+        } else {
+            return .text
+        }
+    }
+
+    private func isHeading(font: UIFont?, paragraphStyle: NSParagraphStyle?, color: UIColor?) -> Bool {
+        return font == fonts.heading1 &&
+        paragraphStyle == paragraphStyles.heading1 &&
+        color == colors.heading1
+    }
+
+    private func hasIndent(paragraphStyle: NSParagraphStyle?) -> Bool {
+        return paragraphStyle?.headIndent ==  itemParagraphStyler.indentation
+    }
+
+    func isHeading(_ attributedString: NSAttributedString) -> Bool {
+        var types: [MarkdownType] = []
+        attributedString.forEachAttributeGroup { attributes, range in
+            let string = attributedString.attributedSubstring(from: range)
+            types.append(evaluateAttributes(attributes, in: string))
+        }
+        return types.allSatisfy { $0 == .heading } && !types.isEmpty
+    }
+
+    func isParagraph(attributedString: NSAttributedString?) -> Bool {
+        guard let string = attributedString?.string, !string.isEmpty else { return false }
+        let trimmedString = string.trimmingCharacters(in: .newlines)
+        return trimmedString.isEmpty
+    }
+
+    func isList(_ attributedString: NSAttributedString) -> Bool {
+        var types: [MarkdownType] = []
+        attributedString.forEachAttributeGroup { attributes, range in
+            let string = attributedString.attributedSubstring(from: range)
+            types.append(evaluateAttributes(attributes, in: string))
+        }
+        return types.allSatisfy { $0 == .list } && !types.isEmpty
+    }
+
+    enum MarkdownType {
+        case heading
+        case text
+        case paragraph
+        case list
     }
 
 }
 
 // MARK: - FontCollection
 
-public protocol FontCollection {
-
-    var heading1: UIFont { get }
-    var heading2: UIFont { get }
-    var body: UIFont { get }
-    var listItemPrefix: UIFont { get }
-
-}
-
-public struct MarkdownFontCollection: FontCollection {
+public struct MarkdownFontCollection {
 
     public var heading1: UIFont
     public var heading2: UIFont
@@ -67,17 +134,7 @@ public struct MarkdownFontCollection: FontCollection {
 
 // MARK: - ColorCollection
 
-public protocol ColorCollection {
-
-    var heading1: UIColor { get }
-    var heading2: UIColor { get }
-    var body: UIColor { get }
-    var link: UIColor { get }
-    var listItemPrefix: UIColor { get }
-
-}
-
-public struct MarkdownColorCollection: ColorCollection {
+public struct MarkdownColorCollection {
 
     public var heading1: UIColor
     public var heading2: UIColor
@@ -103,15 +160,7 @@ public struct MarkdownColorCollection: ColorCollection {
 
 // MARK: - ParagraphStyleCollection
 
-public protocol ParagraphStyleCollection {
-
-    var heading1: NSParagraphStyle { get }
-    var heading2: NSParagraphStyle { get }
-    var body: NSParagraphStyle { get }
-
-}
-
-public struct MarkdownParagraphStyleCollection: ParagraphStyleCollection {
+public struct MarkdownParagraphStyleCollection {
 
     public var heading1: NSParagraphStyle
     public var heading2: NSParagraphStyle
@@ -119,14 +168,10 @@ public struct MarkdownParagraphStyleCollection: ParagraphStyleCollection {
 
     public init() {
         let headingStyle = NSMutableParagraphStyle()
-        //headingStyle.paragraphSpacing = 8
         headingStyle.lineSpacing = 8
 
         let bodyStyle = NSMutableParagraphStyle()
-//        bodyStyle.paragraphSpacingBefore = 8
-//        bodyStyle.paragraphSpacing = 8
         bodyStyle.lineSpacing = 4
-        
 
         heading1 = headingStyle
         heading2 = headingStyle
@@ -156,123 +201,3 @@ public struct ListItemOptions {
     }
 
 }
-
-// MARK: - ListItemParagraphStyler
-
-/// A convenient class used to format lists, such that list item prefixes
-/// are right aligned and list item content left aligns.
-public class ListItemParagraphStyler {
-
-    // MARK: - Properties
-
-    public var indentation: CGFloat {
-        return largestPrefixWidth + options.spacingAfterPrefix
-    }
-
-    private let options: ListItemOptions
-    private let prefixColor: UIColor
-    private let prefixFont: UIFont
-    private let largestPrefixWidth: CGFloat
-
-    private var baseStyle: NSMutableParagraphStyle {
-        let style = NSMutableParagraphStyle()
-        style.paragraphSpacingBefore = options.spacingAbove
-        style.paragraphSpacing = options.spacingBelow
-        return style
-    }
-
-    var trailingParagraphStyle: NSParagraphStyle {
-        let contentIndentation = indentation
-        let style = baseStyle
-        style.firstLineHeadIndent = contentIndentation
-        style.headIndent = contentIndentation
-        return style
-    }
-
-    var listParagraphStyle: NSParagraphStyle {
-        leadingParagraphStyle(prefixWidth: attributedPrefix.size().width)
-    }
-
-    // MARK: Default list prefix
-
-    private let prefix = "•"
-
-    private lazy var prefixAttributes: [NSAttributedString.Key: Any] = [
-        .foregroundColor: prefixColor,
-        .font: prefixFont
-    ]
-
-    var prefixWithSpace: NSAttributedString {
-        let mutablePrefix = NSMutableAttributedString(string: prefix + "\t")
-        mutablePrefix.addAttributes(prefixAttributes)
-        return mutablePrefix
-    }
-
-    var attributedPrefix: NSAttributedString {
-        let mutablePrefix = NSMutableAttributedString(string: prefix)
-        mutablePrefix.addAttributes(prefixAttributes)
-        return mutablePrefix
-    }
-
-    // MARK: - Life cycle
-
-    public init(options: ListItemOptions, prefixFont: UIFont, prefixColor: UIColor) {
-        self.options = options
-        self.prefixColor = prefixColor
-        self.prefixFont = prefixFont
-        self.largestPrefixWidth = prefixFont.widthOfNumberedPrefix(digits: options.maxPrefixDigits)
-    }
-
-    convenience init(configuration: StylerConfiguration) {
-        self.init(options: configuration.listItemOptions,
-                  prefixFont: configuration.fonts.listItemPrefix,
-                  prefixColor: configuration.colors.listItemPrefix)
-    }
-
-    // MARK: - Methods
-
-    /// The paragraph style intended for the first paragraph of the list item.
-    ///
-    /// - Parameter prefixWidth: the width (in points) of the list item prefix.
-
-    private func leadingParagraphStyle(prefixWidth: CGFloat) -> NSParagraphStyle {
-        let contentIndentation = indentation
-        let prefixIndentation: CGFloat = contentIndentation - options.spacingAfterPrefix - prefixWidth
-        let prefixSpill = max(0, prefixWidth - largestPrefixWidth)
-        let firstLineContentIndentation = contentIndentation + prefixSpill
-
-        let style = baseStyle
-        style.firstLineHeadIndent = prefixIndentation
-        style.tabStops = [tabStop(at: firstLineContentIndentation)]
-        style.headIndent = contentIndentation
-        return style
-    }
-
-    private func tabStop(at location: CGFloat) -> NSTextTab {
-        return NSTextTab(textAlignment: .left, location: location, options: [:])
-    }
-
-}
-
-// MARK: - Helpers
-
-private extension UIFont {
-
-    func widthOfNumberedPrefix(digits: UInt) -> CGFloat {
-        return widthOfLargestDigit * CGFloat(digits) + widthOfPeriod
-    }
-
-    private var widthOfLargestDigit: CGFloat {
-        return Array(0...9)
-            .map { NSAttributedString(string: "\($0)", attributes: [.font: self]).size().width }
-            .max()!
-    }
-
-    private var widthOfPeriod: CGFloat {
-        return NSAttributedString(string: ".", attributes: [.font: self])
-            .size()
-            .width
-    }
-
-}
-

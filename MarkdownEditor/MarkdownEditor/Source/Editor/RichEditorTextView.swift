@@ -16,6 +16,15 @@ protocol RichEditorTextViewDelegate: AnyObject {
     func richEditorTextViewDidChangeText(_ sender: RichEditorTextView)
 }
 
+extension RichEditorTextViewDelegate {
+    func richEditorTextViewDidPasteText(_ sender: RichEditorTextView) { }
+    func richEditorTextViewDidChangeText(_ sender: RichEditorTextView) { }
+    func richEditorTextView(_ sender: RichEditorTextView, didChangeBoldSelection isSelected: Bool) { }
+    func richEditorTextView(_ sender: RichEditorTextView, didChangeItalicSelection isSelected: Bool) { }
+    func richEditorTextView(_ sender: RichEditorTextView, didChangeListSelection isSelected: Bool) { }
+    func richEditorTextView(_ sender: RichEditorTextView, didChangeHeadingSelection isSelected: Bool) { }
+}
+
 class RichEditorTextView: UIView {
 
     // MARK: - Views
@@ -55,11 +64,21 @@ class RichEditorTextView: UIView {
 
     // MARK: - Properties
 
-    var delegate: RichEditorTextViewDelegate?
+    public var delegate: RichEditorTextViewDelegate?
+
+    public var isEditingEnabled: Bool = true {
+        didSet {
+            textView.isEditable = isEditingEnabled
+        }
+    }
+
+    public var contentSize: CGSize {
+        textView.contentSize
+    }
 
     // Default configurations - can be changed
-    var styleConfiguration = MarkdownStyles.styleConfiguration
-    private lazy var itemParagraphStyler = ListItemParagraphStyler(configuration: styleConfiguration)
+    var styleConfiguration = StylerConfiguration.default
+    private var itemParagraphStyler: ListItemParagraphStyler { styleConfiguration.itemParagraphStyler }
 
     private lazy var baseAttributes: [NSAttributedString.Key: Any] = [
         .foregroundColor : styleConfiguration.colors.body,
@@ -76,13 +95,6 @@ class RichEditorTextView: UIView {
     private lazy var listAttributes: [NSAttributedString.Key: Any] = [
         .paragraphStyle : itemParagraphStyler.listParagraphStyle
     ]
-
-//    private var linkHighlightingAttributes: AttributedStringTools.AsAttributes {
-//        return AttributedStringTools.AsaBuilder()
-//            .textColor(GIDGlobals.Color.Primary.electricBlue)
-//            .underlineStyle(NSUnderlineStyle.single.rawValue)
-//            .build()
-//    }
 
     public private(set) var attributedString: NSAttributedString? {
         didSet {
@@ -179,25 +191,25 @@ class RichEditorTextView: UIView {
 extension RichEditorTextView {
 
     /// Toggles bold attribute in the current selected range of the attributedString in textView
-    func toggleBold() {
+    public func toggleBold() {
         guard headingIsActive == false, let attributedString = attributedString else { return }
         boldIsActive.toggle()
-        let mutableString = NSMutableAttributedString(attributedString:  attributedString)
-        AttributedStringTool.toggleTrait(.traitBold, to: mutableString, in: currentSelectedRange, defaultFont: styleConfiguration.fonts.body)
+        let mutableString = NSMutableAttributedString(attributedString: attributedString)
+        mutableString.toggleTrait(.traitBold, in: currentSelectedRange, defaultFont: styleConfiguration.fonts.body)
         updateTextField(with: mutableString)
     }
 
     /// Toggles italic attribute in the current selected range of the attributedString in textView
-    func toggleItalic() {
+    public func toggleItalic() {
         guard headingIsActive == false, let attributedString = attributedString else { return }
         italicIsActive.toggle()
-        let mutableString = NSMutableAttributedString(attributedString:  attributedString)
-        AttributedStringTool.toggleTrait(.traitItalic, to: mutableString, in: currentSelectedRange, defaultFont: styleConfiguration.fonts.body)
+        let mutableString = NSMutableAttributedString(attributedString: attributedString)
+        mutableString.toggleTrait(.traitItalic, in: currentSelectedRange, defaultFont: styleConfiguration.fonts.body)
         updateTextField(with: mutableString)
     }
 
     /// Toggles list attribute in the current selected range of the attributedString in textView
-    func toggleList() {
+    public func toggleList() {
         guard let attributedString = attributedString else { return }
         listIsActive.toggle()
         let updatedString = selectList(listIsActive, range: currentSelectedRange, string: attributedString)
@@ -205,7 +217,7 @@ extension RichEditorTextView {
     }
 
     /// Toggles heading attribute in the current selected range of the attributedString in textView
-    func toggleHeading() {
+    public func toggleHeading() {
         guard let attributedString = attributedString else { return }
         headingIsActive.toggle()
         let newAttributedString = selectHeading(headingIsActive, range: currentSelectedRange, string: attributedString)
@@ -269,7 +281,7 @@ extension RichEditorTextView {
             let prefixLength = itemParagraphStyler.prefixWithSpace.length
 
             // Remove all heading styles that are in the selected range
-            if MarkdownStyles.isHeading(lineString), cleanString {
+            if styleConfiguration.isHeading(lineString), cleanString {
                 lineString = selectHeading(false, range: lineString.fullRange, string: lineString, cleanString: false).string
             }
 
@@ -326,7 +338,7 @@ extension RichEditorTextView {
         let mutableText = NSMutableAttributedString(attributedString: string)
         mutableText.addAttribute(for: .foregroundColor, value: styleConfiguration.colors.body)
 
-        let linkRanges = AttributedStringTool.detectedURLRanges(in: string)
+        let linkRanges = string.detectedURLRanges()
         linkRanges.forEach { mutableText.addAttribute(.foregroundColor, value: styleConfiguration.colors.link, range: $0) }
 
         return mutableText
@@ -355,16 +367,16 @@ private extension RichEditorTextView {
         let stringToEvaluate = attributedString.attributedSubstring(from: biggerRange)
 
         // set the selection state based on the selected range
-        headingIsActive = MarkdownStyles.isHeading(stringToEvaluate)
-        listIsActive = MarkdownStyles.isList(stringToEvaluate)
-        boldIsActive = AttributedStringTool.allFontsContainTrait(.traitBold, attributedString: stringToEvaluate) && !headingIsActive
-        italicIsActive = AttributedStringTool.allFontsContainTrait(.traitItalic, attributedString: stringToEvaluate)
+        headingIsActive = styleConfiguration.isHeading(stringToEvaluate)
+        listIsActive = styleConfiguration.isList(stringToEvaluate)
+        boldIsActive = stringToEvaluate.allFontsContainTrait(.traitBold) && !headingIsActive
+        italicIsActive = stringToEvaluate.allFontsContainTrait(.traitItalic)
 
         // adjust cursor location/currentSelected state if its location lands on the list prefix -> editing of the list prefix should not be allowed
         attributedString.linesOfRange(range: range).forEach { lineRange in
             let lineString = attributedString.attributedSubstring(from: lineRange)
 
-            if MarkdownStyles.isList(lineString), stringHasPrefix(lineString) {
+            if styleConfiguration.isList(lineString), stringHasPrefix(lineString) {
                 let lowerBoundDifference = abs(range.location - lineRange.location)
                 let upperBoundDifference = abs(range.location + range.length - lineRange.location)
                 let prefixLength = itemParagraphStyler.prefixWithSpace.length
@@ -396,12 +408,12 @@ private extension RichEditorTextView {
 
         if boldIsActive {
             // if bold is active add bold trait to the new string
-            AttributedStringTool.addTrait(.traitBold, to: newAttributedString, in: newAttributedString.fullRange, defaultFont: styleConfiguration.fonts.body)
+            newAttributedString.addFontTrait(.traitBold, defaultFont: styleConfiguration.fonts.body)
         }
 
         if italicIsActive {
             // if italic is active add italic trait to the new string
-            AttributedStringTool.addTrait(.traitItalic, to: newAttributedString, in: newAttributedString.fullRange, defaultFont: styleConfiguration.fonts.body)
+            newAttributedString.addFontTrait(.traitItalic, defaultFont: styleConfiguration.fonts.body)
         }
 
         if headingIsActive {
@@ -459,7 +471,7 @@ private extension RichEditorTextView {
 
     private func stringHasPrefix(_ string: NSAttributedString) -> Bool {
         let prefixLength = itemParagraphStyler.prefixWithSpace.length
-        return string.prefix(length: prefixLength).string == itemParagraphStyler.prefixWithSpace.string
+        return string.prefix(with: prefixLength).string == itemParagraphStyler.prefixWithSpace.string
     }
 
     /// If cursor is at the beginning of line with the prefix, and no text is selected

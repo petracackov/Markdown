@@ -7,6 +7,9 @@
 
 import UIKit
 
+/// An item representing part of the attributed text with specific properties.
+/// Items are build and generated from attributed string and build into a tree/document that represents the whole attributed text
+/// and can be converted to markdown
 protocol MarkdownItem {
 
     var attributedText: NSAttributedString { get }
@@ -15,18 +18,20 @@ protocol MarkdownItem {
 
 }
 
-class CharacterSetItem: MarkdownItem {
-    var attributedText: NSAttributedString
-    var isBold: Bool { AttributedStringTool.allFontsContainTrait(.traitBold, attributedString: attributedText) }
-    var isItalic: Bool { AttributedStringTool.allFontsContainTrait(.traitItalic, attributedString: attributedText) }
+/// Contains only characters -> the part of attributed string that is just plain text
+final class CharacterSetItem: MarkdownItem {
 
+    var attributedText: NSAttributedString
+    var isBold: Bool { attributedText.allFontsContainTrait(.traitBold) }
+    var isItalic: Bool { attributedText.allFontsContainTrait(.traitItalic) }
+
+    /// those characters should be escaped so they are not handled as indicators for some font attribute
     private var escapingCharactersString: String {
         let escapingCharacters = "`*_{}[]<>()#+-.!|"
-        var string = ""
+        var string = attributedText.string
         escapingCharacters.forEach { character in
-            string = attributedText.string.replacingOccurrences(of: "\(character)", with: "\\" + "\(character)")
+            string = string.replacingOccurrences(of: "\(character)", with: "\\" + "\(character)")
         }
-        print(string)
         return string
     }
 
@@ -54,7 +59,8 @@ class CharacterSetItem: MarkdownItem {
 
 }
 
-class TextItem: MarkdownItem {
+/// Item containing characters, paragraphs and spaces
+final class TextItem: MarkdownItem {
 
     var attributedText: NSAttributedString
     private var items: [MarkdownItem] { toItems() }
@@ -72,7 +78,7 @@ class TextItem: MarkdownItem {
         var currentTextRange: NSRange = NSRange(location: 0, length: 0)
         attributedText.string.enumerated().forEach { (index, character) in
             let string = NSAttributedString(string: "\(character)")
-            if MarkdownStyles.isParagraph(attributedString: string) {
+            if StylerConfiguration.default.isParagraph(attributedString: string) {
                 items.append(CharacterSetItem(attributedText: attributedText.attributedSubstring(from: currentTextRange)))
                 items.append(Paragraph())
                 currentTextRange.location = index + 1
@@ -87,8 +93,8 @@ class TextItem: MarkdownItem {
 
 }
 
-
-class HeadingItem: MarkdownItem {
+/// Item representing the heading
+final class HeadingItem: MarkdownItem {
 
     var attributedText: NSAttributedString
 
@@ -101,7 +107,8 @@ class HeadingItem: MarkdownItem {
     }
 }
 
-class Paragraph: MarkdownItem {
+/// Item paragraph (most of the time that is treated as new line)
+final class Paragraph: MarkdownItem {
     var attributedText: NSAttributedString = NSAttributedString(string: "\n")
 
     func toMarkdown() -> String {
@@ -109,7 +116,8 @@ class Paragraph: MarkdownItem {
     }
 }
 
-class ListPrefix: MarkdownItem {
+/// Item that represents the prefix of list item
+final class ListPrefix: MarkdownItem {
     var attributedText: NSAttributedString
 
     init(attributedText: NSAttributedString) {
@@ -121,7 +129,8 @@ class ListPrefix: MarkdownItem {
     }
 }
 
-class ListItem: MarkdownItem {
+/// Item of the list (has prefix at the beginning -> bullet point/item)
+final class ListItem: MarkdownItem {
 
     var attributedText: NSAttributedString
     private var items: [MarkdownItem] { toItems() }
@@ -138,15 +147,15 @@ class ListItem: MarkdownItem {
         var currentItems: [MarkdownItem] = []
 
         let prefixString = NSMutableAttributedString(attributedString: attributedText)
-        let rangeOfPrefix = prefixString.mutableString.range(of:  "•\t")
+        let rangeOfPrefix = prefixString.mutableString.range(of: "•\t")
         if rangeOfPrefix.location != NSNotFound {
             currentItems.append(ListPrefix(attributedText: prefixString.attributedSubstring(from: rangeOfPrefix)))
             prefixString.replaceCharacters(in: rangeOfPrefix, with: "")
         }
 
-        AttributedStringTool.forEachAttributeGroup(in: prefixString, in: prefixString.fullRange) { attributes, range in
+        prefixString.forEachAttributeGroup { attributes, range in
             let string = prefixString.attributedSubstring(from: range)
-            let item = MarkdownStyles.evaluateAttributesInList(attributes, in: string)
+            let item = StylerConfiguration.default.evaluateAttributesInList(attributes, in: string)
             switch item {
             case .heading:
                 currentItems.append(HeadingItem(attributedText: string))
@@ -166,7 +175,8 @@ class ListItem: MarkdownItem {
     }
 }
 
-class List: MarkdownItem {
+/// Contains list items (bullet points) and a paragraph at the end to separate itself from regular text
+final class List: MarkdownItem {
 
     var attributedText: NSAttributedString
     private var items: [MarkdownItem] { toItems() }
@@ -182,7 +192,7 @@ class List: MarkdownItem {
     }
 
     func toMarkdown() -> String {
-        return items.map { $0.toMarkdown() }.joined(separator: "") 
+        return items.map { $0.toMarkdown() }.joined(separator: "")
     }
 
     private func toItems() -> [MarkdownItem] {
@@ -192,7 +202,8 @@ class List: MarkdownItem {
     }
 }
 
-class Document: MarkdownItem {
+/// Contains all hierarchy of the attributed text -> the whole tree of items
+final class Document: MarkdownItem {
 
     var attributedText: NSAttributedString
 
@@ -209,9 +220,9 @@ class Document: MarkdownItem {
     private func toItems() -> [MarkdownItem] {
         var currentItems: [MarkdownItem] = []
 
-        AttributedStringTool.forEachAttributeGroup(in: attributedText, in: attributedText.fullRange) { attributes, range in
+        attributedText.forEachAttributeGroup { attributes, range in
             let string = attributedText.attributedSubstring(from: range)
-            let item = MarkdownStyles.evaluateAttributes(attributes, in: string)
+            let item = StylerConfiguration.default.evaluateAttributes(attributes, in: string)
             switch item {
             case .heading:
                 currentItems.append(HeadingItem(attributedText: string))

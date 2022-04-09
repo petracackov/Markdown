@@ -9,6 +9,11 @@
 /* Begin PBXBuildFile section */
 		B3B1A2B6C754F1D9C83AD4C4 /* Pods_MarkdownEditor.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D706241C63C07D57DD1213E0 /* Pods_MarkdownEditor.framework */; };
 		C0242D0D27F6EF4100CB10D6 /* Configurations.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0242D0C27F6EF4100CB10D6 /* Configurations.swift */; };
+		C0A006802801C23C0084B84C /* MarkdownGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0A0067F2801C23C0084B84C /* MarkdownGenerator.swift */; };
+		C0A006822801C2AA0084B84C /* UIFont+TextEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0A006812801C2AA0084B84C /* UIFont+TextEditing.swift */; };
+		C0A006852801C2B40084B84C /* NSMutableAttributedString+TextEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0A006832801C2B40084B84C /* NSMutableAttributedString+TextEditing.swift */; };
+		C0A006862801C2B40084B84C /* NSAttributedString+TextEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0A006842801C2B40084B84C /* NSAttributedString+TextEditing.swift */; };
+		C0A0068B2801C8030084B84C /* ListItemParagraphStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0A0068A2801C8030084B84C /* ListItemParagraphStyler.swift */; };
 		C0AE59D427E4926F00B6D414 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AE59D327E4926F00B6D414 /* AppDelegate.swift */; };
 		C0AE59D627E4926F00B6D414 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AE59D527E4926F00B6D414 /* SceneDelegate.swift */; };
 		C0AE59DD27E4927400B6D414 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0AE59DC27E4927400B6D414 /* Assets.xcassets */; };
@@ -21,11 +26,9 @@
 		C0AE59F927E4942B00B6D414 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C0AE59F827E4942B00B6D414 /* Main.storyboard */; };
 		C0AE5A0627E4943400B6D414 /* KeyboardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AE59FB27E4943400B6D414 /* KeyboardManager.swift */; };
 		C0AE5A0727E4943400B6D414 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AE59FC27E4943400B6D414 /* ViewController.swift */; };
-		C0AE5A0827E4943400B6D414 /* FuncsClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AE59FE27E4943400B6D414 /* FuncsClass.swift */; };
 		C0AE5A0927E4943400B6D414 /* AttributedStringTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AE5A0027E4943400B6D414 /* AttributedStringTool.swift */; };
 		C0AE5A0A27E4943400B6D414 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AE5A0127E4943400B6D414 /* Extensions.swift */; };
 		C0AE5A0B27E4943400B6D414 /* MarkdownItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AE5A0327E4943400B6D414 /* MarkdownItem.swift */; };
-		C0AE5A0C27E4943400B6D414 /* MarkdownStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AE5A0427E4943400B6D414 /* MarkdownStyles.swift */; };
 		C0AE5A0D27E4943400B6D414 /* RichEditorTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AE5A0527E4943400B6D414 /* RichEditorTextView.swift */; };
 		C0AE5A0F27E4973C00B6D414 /* CustomStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AE5A0E27E4973C00B6D414 /* CustomStyler.swift */; };
 /* End PBXBuildFile section */
@@ -34,6 +37,11 @@
 		707E3AC0BDA059021CAEA402 /* Pods-MarkdownEditor.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MarkdownEditor.release.xcconfig"; path = "Target Support Files/Pods-MarkdownEditor/Pods-MarkdownEditor.release.xcconfig"; sourceTree = "<group>"; };
 		A2CC643F6D5F9059276BA1C3 /* Pods-MarkdownEditor.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MarkdownEditor.debug.xcconfig"; path = "Target Support Files/Pods-MarkdownEditor/Pods-MarkdownEditor.debug.xcconfig"; sourceTree = "<group>"; };
 		C0242D0C27F6EF4100CB10D6 /* Configurations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configurations.swift; sourceTree = "<group>"; };
+		C0A0067F2801C23C0084B84C /* MarkdownGenerator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkdownGenerator.swift; sourceTree = "<group>"; };
+		C0A006812801C2AA0084B84C /* UIFont+TextEditing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIFont+TextEditing.swift"; sourceTree = "<group>"; };
+		C0A006832801C2B40084B84C /* NSMutableAttributedString+TextEditing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSMutableAttributedString+TextEditing.swift"; sourceTree = "<group>"; };
+		C0A006842801C2B40084B84C /* NSAttributedString+TextEditing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSAttributedString+TextEditing.swift"; sourceTree = "<group>"; };
+		C0A0068A2801C8030084B84C /* ListItemParagraphStyler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListItemParagraphStyler.swift; sourceTree = "<group>"; };
 		C0AE59D027E4926F00B6D414 /* MarkdownEditor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MarkdownEditor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0AE59D327E4926F00B6D414 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C0AE59D527E4926F00B6D414 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -48,11 +56,9 @@
 		C0AE59F827E4942B00B6D414 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		C0AE59FB27E4943400B6D414 /* KeyboardManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyboardManager.swift; sourceTree = "<group>"; };
 		C0AE59FC27E4943400B6D414 /* ViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
-		C0AE59FE27E4943400B6D414 /* FuncsClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FuncsClass.swift; sourceTree = "<group>"; };
 		C0AE5A0027E4943400B6D414 /* AttributedStringTool.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AttributedStringTool.swift; sourceTree = "<group>"; };
 		C0AE5A0127E4943400B6D414 /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		C0AE5A0327E4943400B6D414 /* MarkdownItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkdownItem.swift; sourceTree = "<group>"; };
-		C0AE5A0427E4943400B6D414 /* MarkdownStyles.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkdownStyles.swift; sourceTree = "<group>"; };
 		C0AE5A0527E4943400B6D414 /* RichEditorTextView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RichEditorTextView.swift; sourceTree = "<group>"; };
 		C0AE5A0E27E4973C00B6D414 /* CustomStyler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CustomStyler.swift; sourceTree = "<group>"; };
 		D706241C63C07D57DD1213E0 /* Pods_MarkdownEditor.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MarkdownEditor.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -90,9 +96,29 @@
 		C0242D0B27F6EF2C00CB10D6 /* Styles */ = {
 			isa = PBXGroup;
 			children = (
+				C0AE5A0E27E4973C00B6D414 /* CustomStyler.swift */,
 				C0242D0C27F6EF4100CB10D6 /* Configurations.swift */,
+				C0A0068A2801C8030084B84C /* ListItemParagraphStyler.swift */,
 			);
 			path = Styles;
+			sourceTree = "<group>";
+		};
+		C0A006872801C2C20084B84C /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				C0A006812801C2AA0084B84C /* UIFont+TextEditing.swift */,
+				C0A006842801C2B40084B84C /* NSAttributedString+TextEditing.swift */,
+				C0A006832801C2B40084B84C /* NSMutableAttributedString+TextEditing.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		C0A0068C2801C90E0084B84C /* Editor */ = {
+			isa = PBXGroup;
+			children = (
+				C0AE5A0527E4943400B6D414 /* RichEditorTextView.swift */,
+			);
+			path = Editor;
 			sourceTree = "<group>";
 		};
 		C0AE59C727E4926F00B6D414 = {
@@ -126,16 +152,16 @@
 		C0AE59E727E4935900B6D414 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				C0242D0B27F6EF2C00CB10D6 /* Styles */,
 				C0AE59E927E4937E00B6D414 /* Main */,
 				C0AE59FA27E4943400B6D414 /* Tools */,
-				C0AE59FF27E4943400B6D414 /* MarkdownHealpers */,
+				C0AE59FF27E4943400B6D414 /* MarkdownHealpers-depricated */,
+				C0A006872801C2C20084B84C /* Extensions */,
+				C0242D0B27F6EF2C00CB10D6 /* Styles */,
 				C0AE5A0227E4943400B6D414 /* MarkdownItems */,
-				C0AE59FD27E4943400B6D414 /* New GroupTestStuff */,
+				C0A0068C2801C90E0084B84C /* Editor */,
 				C0AE59F827E4942B00B6D414 /* Main.storyboard */,
 				C0AE59FC27E4943400B6D414 /* ViewController.swift */,
-				C0AE5A0527E4943400B6D414 /* RichEditorTextView.swift */,
-				C0AE5A0E27E4973C00B6D414 /* CustomStyler.swift */,
+				C0A0067F2801C23C0084B84C /* MarkdownGenerator.swift */,
 			);
 			path = Source;
 			sourceTree = "<group>";
@@ -187,28 +213,19 @@
 			path = Tools;
 			sourceTree = "<group>";
 		};
-		C0AE59FD27E4943400B6D414 /* New GroupTestStuff */ = {
-			isa = PBXGroup;
-			children = (
-				C0AE59FE27E4943400B6D414 /* FuncsClass.swift */,
-			);
-			path = "New GroupTestStuff";
-			sourceTree = "<group>";
-		};
-		C0AE59FF27E4943400B6D414 /* MarkdownHealpers */ = {
+		C0AE59FF27E4943400B6D414 /* MarkdownHealpers-depricated */ = {
 			isa = PBXGroup;
 			children = (
 				C0AE5A0027E4943400B6D414 /* AttributedStringTool.swift */,
 				C0AE5A0127E4943400B6D414 /* Extensions.swift */,
 			);
-			path = MarkdownHealpers;
+			path = "MarkdownHealpers-depricated";
 			sourceTree = "<group>";
 		};
 		C0AE5A0227E4943400B6D414 /* MarkdownItems */ = {
 			isa = PBXGroup;
 			children = (
 				C0AE5A0327E4943400B6D414 /* MarkdownItem.swift */,
-				C0AE5A0427E4943400B6D414 /* MarkdownStyles.swift */,
 			);
 			path = MarkdownItems;
 			sourceTree = "<group>";
@@ -336,14 +353,17 @@
 				C0AE5A0927E4943400B6D414 /* AttributedStringTool.swift in Sources */,
 				C0AE59D427E4926F00B6D414 /* AppDelegate.swift in Sources */,
 				C0242D0D27F6EF4100CB10D6 /* Configurations.swift in Sources */,
+				C0A006822801C2AA0084B84C /* UIFont+TextEditing.swift in Sources */,
 				C0AE5A0D27E4943400B6D414 /* RichEditorTextView.swift in Sources */,
+				C0A006802801C23C0084B84C /* MarkdownGenerator.swift in Sources */,
 				C0AE59D627E4926F00B6D414 /* SceneDelegate.swift in Sources */,
 				C0AE5A0F27E4973C00B6D414 /* CustomStyler.swift in Sources */,
-				C0AE5A0827E4943400B6D414 /* FuncsClass.swift in Sources */,
-				C0AE5A0C27E4943400B6D414 /* MarkdownStyles.swift in Sources */,
 				C0AE5A0727E4943400B6D414 /* ViewController.swift in Sources */,
 				C0AE5A0627E4943400B6D414 /* KeyboardManager.swift in Sources */,
 				C0AE5A0A27E4943400B6D414 /* Extensions.swift in Sources */,
+				C0A0068B2801C8030084B84C /* ListItemParagraphStyler.swift in Sources */,
+				C0A006862801C2B40084B84C /* NSAttributedString+TextEditing.swift in Sources */,
+				C0A006852801C2B40084B84C /* NSMutableAttributedString+TextEditing.swift in Sources */,
 				C0AE5A0B27E4943400B6D414 /* MarkdownItem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

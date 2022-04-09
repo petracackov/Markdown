@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import Down
 
 class ViewController: UIViewController {
 
@@ -110,11 +109,9 @@ class ViewController: UIViewController {
     }
 
     private func setupEditor() {
-        let down = Down(markdownString: markdown)
-        let customStyler = CustomStyler(configuration: MarkdownStyles.styleConfiguration)
-        let downString = (try? down.toAttributedString([.hardBreaks], styler: customStyler)) ?? NSAttributedString(string: "")
+        let attributedString = MarkdownGenerator.attributedString(fromMarkdown: markdown) ?? NSAttributedString(string: "")
         editingView.delegate = self
-        editingView.updateTextField(with: downString)
+        editingView.updateTextField(with: attributedString)
     }
 
     // MARK: - Button actions
@@ -138,8 +135,7 @@ class ViewController: UIViewController {
 
     @objc private func buttonAction() {
         guard let attributedString = editingView.attributedString else { return }
-        let document = Document(attributedText: attributedString)
-        editingView.markdownStringLabel.text = document.toMarkdown()
+        editingView.markdownStringLabel.text = MarkdownGenerator.markdown(fromAttributedString: attributedString)
         editingView.layoutIfNeeded()
     }
 
@@ -151,13 +147,6 @@ class ViewController: UIViewController {
 // MARK: - RichEditorTextViewDelegate
 
 extension ViewController: RichEditorTextViewDelegate {
-    func richEditorTextViewDidPasteText(_ sender: RichEditorTextView) {
-        // nothing to do
-    }
-
-    func richEditorTextViewDidChangeText(_ sender: RichEditorTextView) {
-        // nothing to do
-    }
 
     func richEditorTextView(_ sender: RichEditorTextView, didChangeBoldSelection isSelected: Bool) {
         boldButton.backgroundColor = isSelected ? .gray : .white
