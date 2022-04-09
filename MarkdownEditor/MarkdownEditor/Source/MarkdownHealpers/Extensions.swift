@@ -132,6 +132,12 @@ extension NSAttributedString {
         }
     }
 
+    func attributedStringByTrimming(characterSet: CharacterSet) -> NSAttributedString {
+        let modifiedString = NSMutableAttributedString(attributedString: self)
+        modifiedString.trimCharactersInSet(characterSet: characterSet)
+        return NSAttributedString(attributedString: modifiedString)
+    }
+
 //    public func attributedStringByTrimmingCharacterSet(charSet: CharacterSet) -> NSAttributedString {
 //        let modifiedString = NSMutableAttributedString(attributedString: self)
 //        modifiedString.trimCharactersInSet(charSet: charSet)
@@ -228,6 +234,23 @@ extension NSMutableAttributedString {
     func setAttributesToRanges(attributes: [NSAttributedString.Key: Any], ranges: [NSRange]) {
         ranges.forEach { paragraphRange in
             self.setAttributes(attributes, range: paragraphRange)
+        }
+    }
+
+    func trimCharactersInSet(characterSet: CharacterSet) {
+        var range = NSString(string: string).rangeOfCharacter(from: characterSet)
+        
+        // Trim leading characters from character set.
+        while range.length != 0 && range.location == 0 {
+            replaceCharacters(in: range, with: "")
+            range = NSString(string: string).rangeOfCharacter(from: characterSet)
+        }
+
+        // Trim trailing characters from character set.
+        range = NSString(string: string).rangeOfCharacter(from: characterSet, options: .backwards)
+        while range.length != 0 && NSMaxRange(range) == length {
+            replaceCharacters(in: range, with: "")
+            range = NSString(string: string).rangeOfCharacter(from: characterSet, options: .backwards)
         }
     }
 //

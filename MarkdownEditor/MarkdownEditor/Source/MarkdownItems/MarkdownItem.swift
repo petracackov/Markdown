@@ -15,23 +15,30 @@ protocol MarkdownItem {
 
 }
 
-class TextItem: MarkdownItem {
-
+class CharacterSetItem: MarkdownItem {
     var attributedText: NSAttributedString
     var isBold: Bool { AttributedStringTool.allFontsContainTrait(.traitBold, attributedString: attributedText) }
     var isItalic: Bool { AttributedStringTool.allFontsContainTrait(.traitItalic, attributedString: attributedText) }
 
+    private var escapingCharactersString: String {
+        let escapingCharacters = "`*_{}[]<>()#+-.!|"
+        var string = ""
+        escapingCharacters.forEach { character in
+            string = attributedText.string.replacingOccurrences(of: "\(character)", with: "\\" + "\(character)")
+        }
+        print(string)
+        return string
+    }
+
     init(attributedText: NSAttributedString) {
         self.attributedText = attributedText
-
     }
 
     func toMarkdown() -> String {
-        var string = attributedText.string
+        var string = escapingCharactersString
 
         let spacePrefix = string.hasPrefix(" ") ? " " : ""
         let spaceSuffix = string.hasSuffix(" ") ? " " : ""
-
 
         string = string.trimmingCharacters(in: .whitespaces)
 
@@ -40,9 +47,42 @@ class TextItem: MarkdownItem {
         }
 
         if isItalic {
-            string = "_\(string)_"
+            string = "*\(string)*"
         }
         return spacePrefix + string + spaceSuffix
+    }
+
+}
+
+class TextItem: MarkdownItem {
+
+    var attributedText: NSAttributedString
+    private var items: [MarkdownItem] { toItems() }
+
+    init(attributedText: NSAttributedString) {
+        self.attributedText = attributedText
+    }
+
+    func toMarkdown() -> String {
+        return items.map { $0.toMarkdown() }.joined(separator: "")
+    }
+
+    private func toItems() -> [MarkdownItem] {
+        var items: [MarkdownItem] = []
+        var currentTextRange: NSRange = NSRange(location: 0, length: 0)
+        attributedText.string.enumerated().forEach { (index, character) in
+            let string = NSAttributedString(string: "\(character)")
+            if MarkdownStyles.isParagraph(attributedString: string) {
+                items.append(CharacterSetItem(attributedText: attributedText.attributedSubstring(from: currentTextRange)))
+                items.append(Paragraph())
+                currentTextRange.location = index + 1
+                currentTextRange.length = 0
+            } else {
+                currentTextRange.length += 1
+            }
+        }
+        items.append(CharacterSetItem(attributedText: attributedText.attributedSubstring(from: currentTextRange)))
+        return items
     }
 
 }
