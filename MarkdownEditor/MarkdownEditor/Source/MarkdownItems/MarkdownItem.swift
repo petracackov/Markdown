@@ -76,15 +76,16 @@ final class TextItem: MarkdownItem {
     private func toItems() -> [MarkdownItem] {
         var items: [MarkdownItem] = []
         var currentTextRange: NSRange = NSRange(location: 0, length: 0)
-        attributedText.string.enumerated().forEach { (index, character) in
+
+        attributedText.string.forEach { character in
             let string = NSAttributedString(string: "\(character)")
             if StylerConfiguration.default.isParagraph(attributedString: string) {
                 items.append(CharacterSetItem(attributedText: attributedText.attributedSubstring(from: currentTextRange)))
                 items.append(Paragraph())
-                currentTextRange.location = index + 1
+                currentTextRange.location = currentTextRange.location + currentTextRange.length + string.fullRange.length
                 currentTextRange.length = 0
             } else {
-                currentTextRange.length += 1
+                currentTextRange.length += string.fullRange.length
             }
         }
         items.append(CharacterSetItem(attributedText: attributedText.attributedSubstring(from: currentTextRange)))
